@@ -13,7 +13,7 @@ namespace _Scripts.Helper.Pooling
         {
             for (var i = 0; i < _pool.Count; i++)
             {
-                if (!_pool[i].IsRelease)
+                if (!_pool[i].IsRelease())
                 {
                     continue;
                 }

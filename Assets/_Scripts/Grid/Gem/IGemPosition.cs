@@ -6,11 +6,13 @@ namespace _Scripts.Grid.Gem
     {
         public Transform Transform();
         public GameObject GameObject();
+        public Coordinates Coordinates();
         
         public EGridPositionType GridPositionType();
         public bool IsAvailable();
-        public EGridPositionState GridPositionState();
-        public void CreateGemPosition(GameObject gameObject, Transform transform);
-        public void ChangePositionState(EGridPositionState newState);
+        public EPositionState PositionState();
+        public void CreateGemPosition(Coordinates coordinates, GameObject gameObject, Transform transform);
+        public void ChangePositionState(EPositionState newState);
+        public void CrushGem();
     }
 }

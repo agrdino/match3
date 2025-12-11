@@ -255,8 +255,8 @@ namespace _Scripts.Editor
             {
                 _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
                 {
-                    int midY = Definition.BOARD_WIDTH / 2;
-                    int midX = Definition.BOARD_HEIGHT / 2;
+                    int midX = Definition.BOARD_WIDTH / 2;
+                    int midY = Definition.BOARD_HEIGHT / 2;
                     
                     for (int x = midX - 1; x >= -midX; x--)
                     {

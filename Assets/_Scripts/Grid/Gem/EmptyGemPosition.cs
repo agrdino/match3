@@ -4,8 +4,14 @@
     {
         public override EGridPositionType GridPositionType() => EGridPositionType.None;
 
-        public override EGridPositionState GridPositionState() => EGridPositionState.Busy;
-
+        public override EPositionState PositionState() => EPositionState.Busy;
+        
         public bool IsAvailable() => false;
+
+        public void CrushGem()
+        {
+            throw new System.NotImplementedException();
+        }
+
     }
 }

@@ -12,8 +12,8 @@ namespace _Data.LevelConfig
 
         public void CreateDefaultData(int levelID)
         {
-            int midY = Definition.BOARD_WIDTH / 2;
-            int midX = Definition.BOARD_HEIGHT / 2;
+            int midX = Definition.BOARD_WIDTH / 2;
+            int midY = Definition.BOARD_HEIGHT / 2;
 
             this.levelID = levelID;
 

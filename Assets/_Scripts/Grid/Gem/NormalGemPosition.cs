@@ -1,4 +1,5 @@
 ﻿using _Scripts.Gem;
+using UnityEngine;
 
 namespace _Scripts.Grid.Gem
 {
@@ -21,6 +22,12 @@ namespace _Scripts.Grid.Gem
         #endregion
 
         #region ----- Public Function -----
+
+        public void CrushGem()
+        {
+            _currentGem.Crush();
+            ReleaseGem();
+        }
         
         public void ReleaseGem()
         {
@@ -29,12 +36,13 @@ namespace _Scripts.Grid.Gem
         
         public void SetFutureGem(IGem gem)
         {
+            ChangePositionState(EPositionState.Busy);
             _currentGem = gem;
         }
 
         public void CompleteReceivedGem()
         {
-            ChangePositionState(EGridPositionState.Free);
+            ChangePositionState(EPositionState.Free);
         }
         
 

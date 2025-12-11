@@ -7,22 +7,26 @@ namespace _Scripts.Grid.Gem
         protected Transform _transform;
         protected GameObject _gameObject;
         protected EGridPositionType _gridPositionType;
-        protected EGridPositionState _gridPositionState;
-
+        protected EPositionState _positionState;
+        protected Coordinates _coordinates;
+        
         public Transform Transform() => _transform;
         public GameObject GameObject() => _gameObject;
+        public Coordinates Coordinates() => _coordinates;
 
         public virtual EGridPositionType GridPositionType() => _gridPositionType;
-        public virtual EGridPositionState GridPositionState() => _gridPositionState;
+        public virtual EPositionState PositionState() => _positionState;
 
-        public void CreateGemPosition(GameObject gameObject, Transform transform)
+        public void CreateGemPosition(Coordinates coordinates, GameObject gameObject, Transform transform)
         {
             _transform = transform;
             _gameObject = gameObject;
+            _coordinates = coordinates;
         }
-        public void ChangePositionState(EGridPositionState newState)
+        
+        public void ChangePositionState(EPositionState newState)
         {
-            _gridPositionState = newState;
+            _positionState = newState;
         }
     }
 }

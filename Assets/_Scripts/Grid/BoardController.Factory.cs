@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace _Scripts.Grid
 {
-    public partial class GridController
+    public partial class BoardController
     {
         public static IGem _GemFactory(EGemType gemType, Vector3 position)
         {

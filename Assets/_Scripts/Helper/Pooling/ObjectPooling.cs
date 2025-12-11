@@ -5,7 +5,7 @@ namespace _Scripts.Helper.Pooling
     public abstract class ObjectPooling : MonoBehaviour
     {
         protected bool _isRelease = false;
-        public bool IsRelease => _isRelease;
+        public bool IsRelease() => _isRelease;
 
         public void Release()
         {

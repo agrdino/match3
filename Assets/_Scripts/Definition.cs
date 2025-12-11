@@ -5,7 +5,8 @@
         public const int BOARD_WIDTH = 10;
         public const int BOARD_HEIGHT = 10;
 
-        public const float MOVE_TIME_PER_UNIT = 0.05f;
+        public const float MOVE_TIME_PER_UNIT = 0.1f;
+        public const float MIN_SWIPE_DISTENCE = 1f;
     }
 
     public enum EGemType
@@ -24,9 +25,18 @@
         Gem,
     }
     
-    public enum EGridPositionState
+    public enum EPositionState
     {
         Free,
         Busy,
+    }
+
+    public enum ESwipeDirection
+    {
+        Cancel,
+        Left,
+        Right,
+        Up,
+        Down
     }
 }

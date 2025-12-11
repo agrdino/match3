@@ -24,8 +24,8 @@ namespace _Scripts.Grid
                 }
             });
             _gridPositions.Clear();
-            int midY = Definition.BOARD_WIDTH / 2;
-            int midX = Definition.BOARD_HEIGHT / 2;
+            int midX = Definition.BOARD_WIDTH / 2;
+            int midY = Definition.BOARD_HEIGHT / 2;
 
             GridPosition gridPosition = null;
             for (int x = -midX; x < midX; x++)
@@ -34,7 +34,7 @@ namespace _Scripts.Grid
                 {
                     gridPosition = PrefabUtility.InstantiatePrefab(_gridPositionPrefab) as GridPosition;
                     gridPosition.transform.SetParent(transform);
-                    gridPosition.transform.localPosition = Vector3.zero.WithX(y).WithY(x);
+                    gridPosition.transform.localPosition = Vector3.zero.WithX(x).WithY(y);
                     gridPosition.SetCoordinates(new Coordinates(x + midX, y + midY));
                     gridPosition.name = $"{gridPosition.Coordinates.ToString()}";
                     _gridPositions.Add(gridPosition);
