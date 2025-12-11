@@ -2,9 +2,10 @@
 {
     public class EmptyGemPosition : BaseGemPosition, IGemPosition
     {
-        public override EGridPositionType GridPositionType()
-        {
-            return EGridPositionType.None;
-        }
+        public override EGridPositionType GridPositionType() => EGridPositionType.None;
+
+        public override EGridPositionState GridPositionState() => EGridPositionState.Busy;
+
+        public bool IsAvailable() => false;
     }
 }

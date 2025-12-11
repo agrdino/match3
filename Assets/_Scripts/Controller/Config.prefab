@@ -44,4 +44,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d59a2eb8e9a43e29007d9fd97bf461a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _gridPosition: {fileID: 958092919219610793, guid: b4634e1b0588b214083c92cc290ca17d, type: 3}
+  _levelConfigs:
+  - {fileID: 11400000, guid: 9e207cbee30c9480fab3286850a92509, type: 2}
+  _gemAvatars:
+  - _gemType: 1
+    _avatar: {fileID: 21300000, guid: 2696d4b537a344a77a4dd26da4e3c445, type: 3}
+  - _gemType: 2
+    _avatar: {fileID: 21300000, guid: ef82a3798a6134ec1b08dc26cd6a6ab7, type: 3}
+  - _gemType: 3
+    _avatar: {fileID: 21300000, guid: d699e566c12f74d62930182c9b2b0b70, type: 3}
+  - _gemType: 4
+    _avatar: {fileID: 21300000, guid: 906842f76195347488beb09180b98497, type: 3}
+  - _gemType: 5
+    _avatar: {fileID: 21300000, guid: 6cb1129c64b3948cda55ed5c7354a9b5, type: 3}

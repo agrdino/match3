@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace _Scripts
 {
@@ -18,5 +20,15 @@ namespace _Scripts
         {
             return $"({x} _ {y})";
         }
+    }
+
+    [Serializable]
+    public class GemAvatarModel
+    {
+        [SerializeField] private EGemType _gemType;
+        [SerializeField] private Sprite _avatar;
+
+        public EGemType GemType => _gemType;
+        public Sprite Avatar => _avatar;
     }
 }
