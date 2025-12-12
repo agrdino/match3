@@ -1,8 +1,10 @@
-﻿using _Data.LevelConfig;
+﻿using System.Collections.Generic;
+using _Data.LevelConfig;
 using _Scripts.Controller;
 using _Scripts.Gem;
 using _Scripts.Grid.Gem;
 using _Scripts.Helper;
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using NaughtyAttributes;
 using UnityEngine;
@@ -44,7 +46,7 @@ namespace _Scripts.Grid
             }
             _gridController.FindSpawnPosition();
             
-            _FillBoard();
+            _FillBoard(true);
         }
 
         #endregion
@@ -56,7 +58,7 @@ namespace _Scripts.Grid
             _levelConfig = Config.Instance.levelConfigs[0];
         }
         
-        private void _FillBoard()
+        private void _FillBoard(bool firstTime = false)
         {
             int order = 0;
             IGemPosition currentPosition;
@@ -80,7 +82,13 @@ namespace _Scripts.Grid
                     IGem nextGem = null;
                     if (nearestGame == null)
                     {
-                        nextGem = _CreateNewGem(x, y, order);
+                        EGemType newGemType;
+                        do
+                        {
+                            newGemType = (EGemType)Random.Range((int)EGemType.Yellow, (int)EGemType.Orange + 1);
+                        } while (firstTime && _IsMatchAt(new Coordinates(x, y), newGemType, out List<IGemPosition> _, true));
+                        
+                        nextGem = _CreateNewGem(x, y, newGemType, order);
                         order++;
                     }
                     else
@@ -91,13 +99,26 @@ namespace _Scripts.Grid
                     gemPosition.SetFutureGem(nextGem);
                     
                     nextGem.GameObject().SetActive(true);
-                    nextGem.Transform()
-                        .DOMove(gemPosition.Transform().position, nextGem.Transform().position.MoveTimeCalculate(gemPosition.Transform().position))
-                        .SetEase(Ease.Linear)
-                        .OnComplete(() =>
+                    nextGem.MoveTo(gemPosition.Transform().position, order, async () =>
+                    {
+                        gemPosition.CompleteReceivedGem();
+                        await UniTask.Delay(250);
+                        if (_IsMatchAt(gemPosition.Coordinates(), nextGem.GemType(), out List<IGemPosition> matchGem))
                         {
-                            gemPosition.CompleteReceivedGem();
-                        });
+                            foreach (var position in matchGem)
+                            {
+                                position.CrushGem();
+                            }
+                            _FillBoard();
+                        }
+                    });
+                    // nextGem.Transform()
+                    //     .DOMove(gemPosition.Transform().position, nextGem.Transform().position.MoveTimeCalculate(gemPosition.Transform().position))
+                    //     .SetEase(Ease.Linear)
+                    //     .OnComplete(() =>
+                    //     {
+                    //         gemPosition.CompleteReceivedGem();
+                    //     });
                 }
             }
         }
@@ -116,6 +137,7 @@ namespace _Scripts.Grid
 
             return true;
         }
+        
         private NormalGemPosition _FindNearestGem(int x, int y)
         {
             for (int i = y + 1; i < Definition.BOARD_HEIGHT; i++)
@@ -136,11 +158,10 @@ namespace _Scripts.Grid
             return null;
         }
 
-        private IGem _CreateNewGem(int x, int y, int order)
+        private IGem _CreateNewGem(int x, int y, EGemType gemType, int order)
         {
             Vector3 spawnPosition = _gridController.DictSpawnPosition[x].Transform().position + order * Vector3.up;
-            IGem newGem = _GemFactory((EGemType)Random.Range((int)EGemType.Yellow, (int)EGemType.Orange + 1),
-                spawnPosition);
+            IGem newGem = _GemFactory(gemType, spawnPosition, order);
             return newGem;
         }
 

@@ -24,7 +24,7 @@ namespace _Scripts.Grid
             }
         }
 
-        private async void _OnEndSwipe(ESwipeDirection direction)
+        private void _OnEndSwipe(ESwipeDirection direction)
         {
             if (_currentPosition == null)
             {
@@ -57,12 +57,12 @@ namespace _Scripts.Grid
             position1.SetFutureGem(gem2);
 
             //gem1 at p2 || gem2 at p1
-            bool isMatchAtPosition1 = _IsMatchAt(position1.Coordinates(), out List<IGemPosition> gems1);
-            bool isMatchAtPosition2 = _IsMatchAt(position2.Coordinates(), out List<IGemPosition> gems2);
+            bool isMatchAtPosition1 = _IsMatchAt(position1.Coordinates(), gem2.GemType(), out List<IGemPosition> gems1);
+            bool isMatchAtPosition2 = _IsMatchAt(position2.Coordinates(), gem1.GemType(), out List<IGemPosition> gems2);
             
             if (isMatchAtPosition1 || isMatchAtPosition2)
             {
-                gem1.Swap(position2.Transform().position, () =>
+                _ = gem1.Swap(position2.Transform().position, () =>
                 {
                     position2.CompleteReceivedGem();
                     if (isMatchAtPosition1)
@@ -77,7 +77,7 @@ namespace _Scripts.Grid
                     _FillBoard();
                 });
             
-                gem2.Swap(position1.Transform().position, () =>
+                _ = gem2.Swap(position1.Transform().position, () =>
                 {
                     position1.CompleteReceivedGem();
                 });
@@ -90,12 +90,12 @@ namespace _Scripts.Grid
                 
                 position1.ChangePositionState(EPositionState.Busy);
                 position2.ChangePositionState(EPositionState.Busy);
-                gem1.SwapAndSwapBack(position2.Transform().position, () =>
+                _ = gem1.SwapAndSwapBack(position2.Transform().position, () =>
                 {
                     position2.ChangePositionState(EPositionState.Free);
                 });
                 
-                gem2.SwapAndSwapBack(position1.Transform().position, () =>
+                _ = gem2.SwapAndSwapBack(position1.Transform().position, () =>
                 {
                     position1.ChangePositionState(EPositionState.Free);
                 });
@@ -145,7 +145,7 @@ namespace _Scripts.Grid
             return _gem[coordinates.x, coordinates.y];
         }
         
-        private bool _IsMatchAt(Coordinates coordinates, out List<IGemPosition> matchedGem)
+        private bool _IsMatchAt(Coordinates coordinates, EGemType target, out List<IGemPosition> matchedGem, bool predict = false)
         {
             int x = coordinates.x;
             int y = coordinates.y;
@@ -157,22 +157,24 @@ namespace _Scripts.Grid
             }
 
             IGemPosition center = _gem[x, y];
-            if (center.IsAvailable())
+            if (!predict)
             {
-                return false;
-            }
+                if (center.IsAvailable())
+                {
+                    return false;
+                }
             
-            if (center is not NormalGemPosition centerGem)
-            {
-                return false;
+                if (center is not NormalGemPosition centerGem)
+                {
+                    return false;
+                }
             }
-            EGemType target = centerGem.CurrentGem.GemType();
 
             List<IGemPosition> horizontal = new (){ center };
 
             // left
             int check = x - 1;
-            while (_IsInBounds(check, y) && _IsTheSame(check, y, target))
+            while (_IsInBounds(check, y) && _IsTheSame(check, y, target, predict))
             {
                 horizontal.Add(_gem[check, y]);
                 check--;
@@ -180,7 +182,7 @@ namespace _Scripts.Grid
 
             // right
             check = x + 1;
-            while (_IsInBounds(check, y) && _IsTheSame(check, y, target))
+            while (_IsInBounds(check, y) && _IsTheSame(check, y, target, predict))
             {
                 horizontal.Add(_gem[check, y]);
                 check++;
@@ -195,7 +197,7 @@ namespace _Scripts.Grid
             List<IGemPosition> vertical = new() { center };
             //down
             check = y - 1;
-            while (_IsInBounds(x, check) && _IsTheSame(x, check, target))
+            while (_IsInBounds(x, check) && _IsTheSame(x, check, target, predict))
             {
                 vertical.Add(_gem[x, check]);
                 check--;
@@ -203,7 +205,7 @@ namespace _Scripts.Grid
 
             //up
             check = y + 1;
-            while (_IsInBounds(x, check) && _IsTheSame(x, check, target))
+            while (_IsInBounds(x, check) && _IsTheSame(x, check, target, predict))
             {
                 vertical.Add(_gem[x, check]);
                 check++;
@@ -219,7 +221,7 @@ namespace _Scripts.Grid
             return matchedGem.Count >= 3;
         }
 
-        private bool _IsTheSame(int x, int y, EGemType gemType)
+        private bool _IsTheSame(int x, int y, EGemType gemType, bool predict = false)
         {
             IGemPosition temp = _gem[x, y];
             
@@ -228,7 +230,24 @@ namespace _Scripts.Grid
                 return false;
             }
 
-            if (target.PositionState() is EPositionState.Busy || target.IsAvailable())
+            if (target.IsAvailable())
+            {
+                return false;
+            }
+
+            if (!predict)
+            {
+                if (target.PositionState() is EPositionState.Busy)
+                {
+                    return false;
+                }
+            }
+            // if (!predict && (target.PositionState() is EPositionState.Busy || target.IsAvailable()))
+            // {
+            //     return false;
+            // }
+            
+            if (target.IsAvailable())
             {
                 return false;
             }

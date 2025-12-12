@@ -6,11 +6,11 @@ namespace _Scripts.Grid
 {
     public partial class BoardController
     {
-        public static IGem _GemFactory(EGemType gemType, Vector3 position)
+        public static IGem _GemFactory(EGemType gemType, Vector3 position, int order)
         {
             IGem newGem = GemPooling.Instance.Get();
             newGem.Transform().position = position;
-            newGem.SetUp(gemType);
+            newGem.SetUp(gemType, order);
             return newGem;
         }
     }

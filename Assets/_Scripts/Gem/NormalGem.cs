@@ -1,4 +1,5 @@
 ﻿using System;
+using _Scripts.Controller;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UnityEngine;
@@ -10,6 +11,7 @@ namespace _Scripts.Gem
         public void Crush()
         {
             gameObject.SetActive(false);
+            GemPooling.Instance.Release(this);
         }
 
         public async UniTask Swap(Vector3 target, Action callback = null)
