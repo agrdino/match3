@@ -7,6 +7,8 @@
 
         public const float MOVE_TIME_PER_UNIT = 0.1f;
         public const float MIN_SWIPE_DISTENCE = 1f;
+
+        public const float DELAY_TO_SHUFFLE = 1;
     }
 
     public enum EGemType
@@ -38,5 +40,13 @@
         Right,
         Up,
         Down
+    }
+    
+    public enum EBoardState
+    {
+        Creating,
+        Free,
+        PreShuffle,
+        Shuffling,
     }
 }

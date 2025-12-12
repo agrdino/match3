@@ -15,5 +15,7 @@ namespace _Scripts.Gem
         public void MoveTo(Vector3 targetPosition, int order, Action onCompleteMoveCallback);
         public UniTask Swap(Vector3 target, Action callback = null);
         public UniTask SwapAndSwapBack(Vector3 target, Action callback = null);
+
+        public void Release();
     }
 }

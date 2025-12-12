@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using _Data.LevelConfig;
-using _Scripts.Grid;
 using UnityEditor;
 using UnityEngine;
 
@@ -258,11 +257,11 @@ namespace _Scripts.Editor
                     int midX = Definition.BOARD_WIDTH / 2;
                     int midY = Definition.BOARD_HEIGHT / 2;
                     
-                    for (int x = midX - 1; x >= -midX; x--)
+                    for (int y = midY - 1; y >= -midY; y--)
                     {
                         EditorGUILayout.BeginHorizontal();
                         {
-                            for (int y = midY - 1; y >= -midY; y--)
+                            for (int x = midX - 1; x >= -midX; x--)
                             {
                                 _DrawGridPositionButton(x + midX, y + midY);
                             }

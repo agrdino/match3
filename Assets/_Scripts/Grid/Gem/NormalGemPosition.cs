@@ -34,9 +34,9 @@ namespace _Scripts.Grid.Gem
             _currentGem = null;
         }
         
-        public void SetFutureGem(IGem gem)
+        public void SetFutureGem(IGem gem, bool force = false)
         {
-            ChangePositionState(EPositionState.Busy);
+            ChangePositionState(force ? EPositionState.Free : EPositionState.Busy);
             _currentGem = gem;
         }
 

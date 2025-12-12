@@ -12,15 +12,14 @@ namespace _Scripts.Grid
         private NormalGemPosition _currentPosition;
         private void _OnBeginSwipe(Coordinates coordinates)
         {
-            IGemPosition temp = _gem[coordinates.x, coordinates.y];
-            if (temp.IsAvailable() || temp.PositionState() is not EPositionState.Free)
+            if (_boardState is EBoardState.Shuffling)
             {
                 return;
             }
-
-            if (temp is NormalGemPosition normalGemPosition)
+            _currentPosition = _gemPositions[coordinates.x, coordinates.y];
+            if (_currentPosition.IsAvailable() || _currentPosition.PositionState() is not EPositionState.Free)
             {
-                _currentPosition = normalGemPosition;
+                _currentPosition = null;
             }
         }
 
@@ -31,19 +30,17 @@ namespace _Scripts.Grid
                 return;
             }
             
-            if (direction is ESwipeDirection.Cancel)
+            if (_boardState == EBoardState.Shuffling || direction == ESwipeDirection.Cancel )
             {
+                _currentPosition = null;
                 return;
             }
-
-            IGemPosition temp = _GetSwipePosition(_currentPosition.Coordinates(), direction);
-            if (temp is not NormalGemPosition position2)
-            {
-                return;
-            }
+            
+            NormalGemPosition position2 = _GetSwipePosition(_currentPosition.Coordinates(), direction);
 
             if (position2.IsAvailable() || position2.PositionState() is not EPositionState.Free)
             {
+                _currentPosition = null;
                 return;
             }
             
@@ -57,8 +54,8 @@ namespace _Scripts.Grid
             position1.SetFutureGem(gem2);
 
             //gem1 at p2 || gem2 at p1
-            bool isMatchAtPosition1 = _IsMatchAt(position1.Coordinates(), gem2.GemType(), out List<IGemPosition> gems1);
-            bool isMatchAtPosition2 = _IsMatchAt(position2.Coordinates(), gem1.GemType(), out List<IGemPosition> gems2);
+            bool isMatchAtPosition1 = _IsMatchAt(position1.Coordinates(), out (NormalGemPosition origin, List<NormalGemPosition> matchedGem) match1);
+            bool isMatchAtPosition2 = _IsMatchAt(position2.Coordinates(), out (NormalGemPosition origin, List<NormalGemPosition> matchedGem) match2);
             
             if (isMatchAtPosition1 || isMatchAtPosition2)
             {
@@ -67,12 +64,12 @@ namespace _Scripts.Grid
                     position2.CompleteReceivedGem();
                     if (isMatchAtPosition1)
                     {
-                        gems1.ForEach(x => x.CrushGem());
+                        _MatchHandler(match1);
                     }
 
                     if (isMatchAtPosition2)
                     {
-                        gems2.ForEach(x => x.CrushGem());
+                        _MatchHandler(match2);
                     }
                     _FillBoard();
                 });
@@ -88,8 +85,6 @@ namespace _Scripts.Grid
                 position2.SetFutureGem(gem2);
                 position1.SetFutureGem(gem1);
                 
-                position1.ChangePositionState(EPositionState.Busy);
-                position2.ChangePositionState(EPositionState.Busy);
                 _ = gem1.SwapAndSwapBack(position2.Transform().position, () =>
                 {
                     position2.ChangePositionState(EPositionState.Free);
@@ -100,9 +95,11 @@ namespace _Scripts.Grid
                     position1.ChangePositionState(EPositionState.Free);
                 });
             }
+            
+            _currentPosition = null;
         }
 
-        private IGemPosition _GetSwipePosition(Coordinates coordinates, ESwipeDirection direction)
+        private NormalGemPosition _GetSwipePosition(Coordinates coordinates, ESwipeDirection direction)
         {
             switch (direction)
             {
@@ -137,46 +134,44 @@ namespace _Scripts.Grid
                 return null;
             }
             
-            if (coordinates.x >= Definition.BOARD_HEIGHT || coordinates.y >= Definition.BOARD_WIDTH)
-            {
-                return null;
-            }
-            
-            return _gem[coordinates.x, coordinates.y];
+            return _gemPositions[coordinates.x, coordinates.y];
         }
         
-        private bool _IsMatchAt(Coordinates coordinates, EGemType target, out List<IGemPosition> matchedGem, bool predict = false)
+        private bool _IsMatchAt(Coordinates coordinates, out (NormalGemPosition origin, List<NormalGemPosition> matchedGem) match,
+            bool predict = false)
         {
             int x = coordinates.x;
             int y = coordinates.y;
             
-            matchedGem = new List<IGemPosition>();
+            match = new ()
+            {
+                matchedGem = new()
+            };
+            
             if (!_IsInBounds(x, y))
             {
                 return false;
             }
 
-            IGemPosition center = _gem[x, y];
-            if (!predict)
-            {
-                if (center.IsAvailable())
-                {
-                    return false;
-                }
+            NormalGemPosition center = _gemPositions[x, y];
             
-                if (center is not NormalGemPosition centerGem)
-                {
-                    return false;
-                }
+            match.origin = center;
+            if (center.IsAvailable())
+            {
+                return false;
             }
 
-            List<IGemPosition> horizontal = new (){ center };
+            EGemType target = center.CurrentGem.GemType();
 
+            List<NormalGemPosition> horizontal = new (){ center };
+
+            int check = 0;
+            
             // left
-            int check = x - 1;
+            check = x - 1;
             while (_IsInBounds(check, y) && _IsTheSame(check, y, target, predict))
             {
-                horizontal.Add(_gem[check, y]);
+                horizontal.Add(_gemPositions[check, y]);
                 check--;
             }
 
@@ -184,7 +179,7 @@ namespace _Scripts.Grid
             check = x + 1;
             while (_IsInBounds(check, y) && _IsTheSame(check, y, target, predict))
             {
-                horizontal.Add(_gem[check, y]);
+                horizontal.Add(_gemPositions[check, y]);
                 check++;
             }
 
@@ -194,21 +189,17 @@ namespace _Scripts.Grid
                 Debug.LogError("-----------------------");
                 horizontal.ForEach(z =>
                 {
-                    if (predict)
-                    {
-                        return;
-                    }
-                    Debug.Log(z.Coordinates() + " " + (z as NormalGemPosition).CurrentGem.GemType());
+                    Debug.Log(z.Coordinates() + " " + z.CurrentGem.GemType());
                 });
-                matchedGem.AddRange(horizontal);
+                match.matchedGem.AddRange(horizontal);
             }
             
-            List<IGemPosition> vertical = new() { center };
+            List<NormalGemPosition> vertical = new() { center };
             //down
             check = y - 1;
             while (_IsInBounds(x, check) && _IsTheSame(x, check, target, predict))
             {
-                vertical.Add(_gem[x, check]);
+                vertical.Add(_gemPositions[x, check]);
                 check--;
             }
 
@@ -216,7 +207,7 @@ namespace _Scripts.Grid
             check = y + 1;
             while (_IsInBounds(x, check) && _IsTheSame(x, check, target, predict))
             {
-                vertical.Add(_gem[x, check]);
+                vertical.Add(_gemPositions[x, check]);
                 check++;
             }
 
@@ -225,25 +216,34 @@ namespace _Scripts.Grid
                 Debug.LogError("-----------------------");
                 vertical.ForEach(z =>
                 {
-                    if (predict)
-                    {
-                        return;
-                    }
                     Debug.Log(z.Coordinates() + " " + (z as NormalGemPosition).CurrentGem.GemType());
                 });
-                matchedGem.AddRange(vertical);
+                match.matchedGem.AddRange(vertical);
             }
 
-            matchedGem = matchedGem.Distinct().ToList();
+            match.matchedGem = match.matchedGem.Distinct().ToList();
 
-            return matchedGem.Count >= 3;
+            return match.matchedGem.Count >= 3;
+        }
+
+        private bool _IsMatchAt(Coordinates coordinates, bool predict = false)
+        {
+            return _IsMatchAt(coordinates, out (NormalGemPosition origin, List<NormalGemPosition> matchedGem) _, predict);
+        }
+
+        private void _MatchHandler((NormalGemPosition origin, List<NormalGemPosition> matchedGem) match)
+        {
+            foreach (var gemPosition in match.matchedGem)
+            {
+                gemPosition.CrushGem();
+            }
         }
 
         private bool _IsTheSame(int x, int y, EGemType gemType, bool predict = false)
         {
-            IGemPosition temp = _gem[x, y];
+            NormalGemPosition target = _gemPositions[x, y];
             
-            if (temp is not NormalGemPosition target)
+            if (target == null)
             {
                 return false;
             }
@@ -265,11 +265,6 @@ namespace _Scripts.Grid
             //     return false;
             // }
             
-            if (target.IsAvailable())
-            {
-                return false;
-            }
-
             return target.CurrentGem.GemType() == gemType;
         }
     }
