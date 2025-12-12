@@ -191,6 +191,15 @@ namespace _Scripts.Grid
             // Nếu ngang >= 3 -> thêm vào result
             if (horizontal.Count >= 3)
             {
+                Debug.LogError("-----------------------");
+                horizontal.ForEach(z =>
+                {
+                    if (predict)
+                    {
+                        return;
+                    }
+                    Debug.Log(z.Coordinates() + " " + (z as NormalGemPosition).CurrentGem.GemType());
+                });
                 matchedGem.AddRange(horizontal);
             }
             
@@ -213,6 +222,15 @@ namespace _Scripts.Grid
 
             if (vertical.Count >= 3)
             {
+                Debug.LogError("-----------------------");
+                vertical.ForEach(z =>
+                {
+                    if (predict)
+                    {
+                        return;
+                    }
+                    Debug.Log(z.Coordinates() + " " + (z as NormalGemPosition).CurrentGem.GemType());
+                });
                 matchedGem.AddRange(vertical);
             }
 
