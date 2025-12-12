@@ -125,12 +125,11 @@ namespace _Scripts.Grid
                     gemPosition.CurrentGem.MoveTo(gemPosition.Transform().position, order, async () =>
                     {
                         gemPosition.CompleteReceivedGem();
-                        await UniTask.Delay(200);
                         if (_IsMatchAt(gemPosition.Coordinates(), out (NormalGemPosition origin, List<NormalGemPosition> matchedGem) match))
                         {
-                            _MatchHandler(match);
+                            await _MatchHandler(match, 250);
 
-                            _FillBoard(isSub: true);
+                            _FillBoard();
                         }
                     });
                     // nextGem.Transform()
@@ -149,7 +148,7 @@ namespace _Scripts.Grid
             }
             
             //check available match
-            if (!_HasAnyPossibleMove())
+            if (_boardState is EBoardState.Free && !_HasAnyPossibleMove())
             {
                 _boardState = EBoardState.PreShuffle;
                 _shuffleTimer = Time.time + Definition.DELAY_TO_SHUFFLE;
@@ -185,6 +184,7 @@ namespace _Scripts.Grid
 
                         if (_IsMatchAt(origin.Coordinates(), true) || _IsMatchAt(horizontal.Coordinates(), true))
                         {
+                            Debug.LogError($"Has match at {origin.Coordinates()} - {horizontal.Coordinates()}");
                             hasAvailableMove = true;
                         }
                         
@@ -205,6 +205,7 @@ namespace _Scripts.Grid
 
                         if (_IsMatchAt(origin.Coordinates(), true) || _IsMatchAt(vertical.Coordinates(), true))
                         {
+                            Debug.LogError($"Has match at {origin.Coordinates()} - {vertical.Coordinates()}");
                             hasAvailableMove = true;
                         }
                         
@@ -229,19 +230,20 @@ namespace _Scripts.Grid
 
             List<Coordinates> coordinates = new();
             List<IGem> gems = new();
+            
+            foreach (var gemPosition in _gemPositions)
+            {
+                if (gemPosition == null)
+                {
+                    continue;
+                }
+                coordinates.Add(gemPosition.Coordinates());
+                gems.Add(gemPosition.CurrentGem);
+                gemPosition.ReleaseGem();
+            }
+
             do
             {
-                foreach (var gemPosition in _gemPositions)
-                {
-                    if (gemPosition == null)
-                    {
-                        continue;
-                    }
-                    coordinates.Add(gemPosition.Coordinates());
-                    gems.Add(gemPosition.CurrentGem);
-                    gemPosition.ReleaseGem();
-                }
-
                 coordinates = coordinates.Shuffled().ToList();
                 gems = gems.Shuffled().ToList();
                 
@@ -252,7 +254,6 @@ namespace _Scripts.Grid
                 }
             } while (!_HasAnyPossibleMove());
 
-            _boardState = EBoardState.Free;
             for (int i = 0; i < coordinates.Count; i++)
             {
                 NormalGemPosition current = _gemPositions[coordinates[i].x, coordinates[i].y];
@@ -263,7 +264,22 @@ namespace _Scripts.Grid
             }
 
             await UniTask.Delay(1000);
-            //check any match => fill board
+            
+            foreach (var gemPosition in _gemPositions)
+            {
+                if (gemPosition == null)
+                {
+                    continue;
+                }
+                
+                if (_IsMatchAt(gemPosition.Coordinates(), out (NormalGemPosition origin, List<NormalGemPosition> matchedGem) match1))
+                {
+                    await _MatchHandler(match1, 0);
+                }
+            }
+                                    
+            _boardState = EBoardState.Free;
+            _FillBoard();
         }
         
         private bool _IsInBounds(int x, int y)
@@ -285,17 +301,17 @@ namespace _Scripts.Grid
         {
             for (int i = y + 1; i < Definition.BOARD_HEIGHT; i++)
             {
-                if (_gemPositions[x, i] is not NormalGemPosition gemPosition)
-                {
-                    continue;
-                }
-
-                if (gemPosition.IsAvailable())
+                if (_gemPositions[x, i] == null)
                 {
                     continue;
                 }
                 
-                return gemPosition;
+                if (_gemPositions[x, i].IsAvailable())
+                {
+                    continue;
+                }
+                
+                return _gemPositions[x, i];
             }
 
             return null;

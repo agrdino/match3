@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using _Scripts.Gem;
 using _Scripts.Grid.Gem;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace _Scripts.Grid
@@ -59,18 +60,22 @@ namespace _Scripts.Grid
             
             if (isMatchAtPosition1 || isMatchAtPosition2)
             {
-                _ = gem1.Swap(position2.Transform().position, () =>
+                _ = gem1.Swap(position2.Transform().position, async () =>
                 {
-                    position2.CompleteReceivedGem();
+                    UniTask t1 = new UniTask();
                     if (isMatchAtPosition1)
                     {
-                        _MatchHandler(match1);
+                        t1 = _MatchHandler(match1);
                     }
 
                     if (isMatchAtPosition2)
                     {
-                        _MatchHandler(match2);
+                        t1 = _MatchHandler(match2);
                     }
+
+                    await t1;
+
+                    position2.CompleteReceivedGem();
                     _FillBoard();
                 });
             
@@ -231,11 +236,17 @@ namespace _Scripts.Grid
             return _IsMatchAt(coordinates, out (NormalGemPosition origin, List<NormalGemPosition> matchedGem) _, predict);
         }
 
-        private void _MatchHandler((NormalGemPosition origin, List<NormalGemPosition> matchedGem) match)
+        private async UniTask _MatchHandler((NormalGemPosition origin, List<NormalGemPosition> matchedGem) match, int delayTime = 150)
         {
             foreach (var gemPosition in match.matchedGem)
             {
+                gemPosition.ChangePositionState(EPositionState.Busy);
+            }
+            await UniTask.Delay(delayTime);
+            foreach (var gemPosition in match.matchedGem)
+            {
                 gemPosition.CrushGem();
+                gemPosition.ChangePositionState(EPositionState.Free);
             }
         }
 

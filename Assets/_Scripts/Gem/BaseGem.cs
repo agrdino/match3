@@ -20,7 +20,7 @@ namespace _Scripts.Gem
         protected float _delayMove; 
         
         protected EGemType _gemType;
-        protected float _targetPosition;
+        protected Vector3 _targetPosition;
         protected float _velocity;
         protected Action _onCompleteMove;
         protected bool _isMoving;
@@ -44,7 +44,7 @@ namespace _Scripts.Gem
         public virtual void MoveTo(Vector3 targetPosition, int order, Action onCompleteMoveCallback)
         {
             _delayMove = order * 0.05f;
-            _targetPosition = targetPosition.y;
+            _targetPosition = targetPosition;
             _onCompleteMove = onCompleteMoveCallback;
             if (!_isMoving)
             {
@@ -60,17 +60,17 @@ namespace _Scripts.Gem
                 return;
             }
 
-            if (transform.position.y < _targetPosition)
+            if (Vector3.Distance(transform.position, _targetPosition) < 0.1f)
             {
                 _isMoving = false;
                 _onCompleteMove?.Invoke();
                 _onCompleteMove = null;
                 _velocity = 0;
-                transform.position = transform.position.WithY(_targetPosition);
+                transform.position = _targetPosition;
                 return; 
             }
             
-            transform.position += (Time.deltaTime / Definition.MOVE_TIME_PER_UNIT) * _velocity * Vector3.down;
+            transform.position += (Time.deltaTime / Definition.MOVE_TIME_PER_UNIT) * _velocity * (_targetPosition - transform.position).normalized;
         }
     }
 }
