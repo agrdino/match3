@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 
-namespace _Scripts.Grid.Gem
+namespace _Scripts.Grid
 {
-    public abstract class BaseGemPosition
+    public abstract class BaseTilePosition
     {
         protected Transform _transform;
         protected GameObject _gameObject;
@@ -17,7 +17,7 @@ namespace _Scripts.Grid.Gem
         public virtual EGridPositionType GridPositionType() => _gridPositionType;
         public virtual EPositionState PositionState() => _positionState;
 
-        public void CreateGemPosition(Coordinates coordinates, GameObject gameObject, Transform transform)
+        public void CreateTilePosition(Coordinates coordinates, GameObject gameObject, Transform transform)
         {
             _transform = transform;
             _gameObject = gameObject;

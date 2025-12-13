@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using _Scripts.Grid.Gem;
+using _Scripts.Grid;
 using NaughtyAttributes;
 using UnityEngine;
 
@@ -18,13 +18,13 @@ namespace _Scripts.Grid
         #region ----- Properties -----
 
         public GridPosition[,] Grids => _grids;
-        public Dictionary<int, IGemPosition> DictSpawnPosition => _dictSpawnPosition;        
+        public Dictionary<int, ITilePosition> DictSpawnPosition => _dictSpawnPosition;        
         
         #endregion
         
         #region ----- Variable -----
 
-        private Dictionary<int, IGemPosition> _dictSpawnPosition = new();
+        private Dictionary<int, ITilePosition> _dictSpawnPosition = new();
         private GridPosition[,] _grids;
 
         #endregion
@@ -50,12 +50,12 @@ namespace _Scripts.Grid
             {
                 for (int y = Definition.BOARD_HEIGHT - 1; y >= 0; y--)
                 {
-                    if (_grids[x, y].GemPosition is not NormalGemPosition normalGemPosition)
+                    if (_grids[x, y].TilePosition is not NormalTilePosition normalTilePosition)
                     {
                         continue;
                     }
-                    normalGemPosition.Transform().name = "SpawnPosition";
-                    _dictSpawnPosition.Add(x, normalGemPosition);
+                    normalTilePosition.Transform().name = "SpawnPosition";
+                    _dictSpawnPosition.Add(x, normalTilePosition);
                     break;
                 }
             }

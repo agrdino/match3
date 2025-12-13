@@ -1,6 +1,6 @@
-﻿namespace _Scripts.Grid.Gem
+﻿namespace _Scripts.Grid
 {
-    public class EmptyGemPosition : BaseGemPosition, IGemPosition
+    public class EmptyTilePosition : BaseTilePosition, ITilePosition
     {
         public override EGridPositionType GridPositionType() => EGridPositionType.None;
 
@@ -8,7 +8,7 @@
         
         public bool IsAvailable() => false;
 
-        public void CrushGem()
+        public void CrushTile()
         {
             throw new System.NotImplementedException();
         }

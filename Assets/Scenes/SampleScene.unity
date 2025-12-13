@@ -1511,6 +1511,7 @@ GameObject:
   m_Component:
   - component: {fileID: 339602122}
   - component: {fileID: 339602121}
+  - component: {fileID: 339602123}
   m_Layer: 0
   m_Name: Pooling
   m_TagString: Untagged
@@ -1546,6 +1547,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &339602123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 339602120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 401e7b07e9d04ec6a8f5174a466ecfaf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _prefab: {fileID: -5928214444908666066, guid: 26fc474551b774625a51f059491663ca, type: 3}
 --- !u!1001 &348718563
 PrefabInstance:
   m_ObjectHideFlags: 0

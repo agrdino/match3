@@ -1,6 +1,6 @@
 ﻿using System;
 using _Data.LevelConfig;
-using _Scripts.Grid.Gem;
+using _Scripts.Tile;
 using NaughtyAttributes;
 using UnityEngine;
 
@@ -14,7 +14,7 @@ namespace _Scripts.Grid
         [SerializeField] private SpriteMask _mask;
         
         [ReadOnly] [SerializeField] private Coordinates _coordinates;
-        private IGemPosition _gemPosition;
+        private ITilePosition _tilePosition;
 
         public event Action<Coordinates> onBeginSwipe;
         public event Action<ESwipeDirection> onEndSwipe; 
@@ -26,8 +26,8 @@ namespace _Scripts.Grid
         #region ----- Properties -----
 
         public Coordinates Coordinates => _coordinates;
-        public EGridPositionType GridPositionType => _gemPosition.GridPositionType();
-        public IGemPosition GemPosition => _gemPosition;
+        public EGridPositionType GridPositionType => _tilePosition.GridPositionType();
+        public ITilePosition TilePosition => _tilePosition;
 
         #endregion
         
@@ -38,7 +38,7 @@ namespace _Scripts.Grid
             _coordinates = coordinates;
         }
 
-        public IGemPosition CreateGemPosition(GridConfigModel gridConfig)
+        public ITilePosition CreatTilePosition(GridConfigModel gridConfig)
         {
             switch (gridConfig.type)
             {
@@ -46,12 +46,12 @@ namespace _Scripts.Grid
                 {
                     _spriteRenderer.enabled = false;
                     _mask.enabled = false;
-                    _gemPosition = new EmptyGemPosition();
+                    _tilePosition = new EmptyTilePosition();
                     break;
                 }
                 case EGridPositionType.Gem:
                 {
-                    _gemPosition = new NormalGemPosition();
+                    _tilePosition = new NormalTilePosition();
                     break;
                 }
                 default:
@@ -60,8 +60,8 @@ namespace _Scripts.Grid
                 }
             }
             
-            _gemPosition.CreateGemPosition(_coordinates, gameObject, transform);
-            return _gemPosition;
+            _tilePosition.CreateTilePosition(_coordinates, gameObject, transform);
+            return _tilePosition;
         }
 
         #endregion
@@ -95,5 +95,23 @@ namespace _Scripts.Grid
         }
 
         #endregion
+
+#if UNITY_EDITOR
+        [SerializeField] private ETileType _toType;
+
+        [Button]
+        private void _TransformToType()
+        {
+            if (_toType == ETileType.None)
+            {
+                return;
+            }
+            _tilePosition.CrushTile();
+            ITile newTile = BoardController.TileFactory(_toType, transform.position, 0);
+            newTile.GameObject().SetActive(true);
+            (_tilePosition as NormalTilePosition)?.SetFutureGem(newTile, true);
+        } 
+
+#endif
     }
 }

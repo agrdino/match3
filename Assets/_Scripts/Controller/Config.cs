@@ -20,6 +20,6 @@ namespace _Scripts.Controller
 
         #endregion
 
-        public Sprite this[EGemType gemType] => _gemAvatars.Find(x => x.GemType == gemType).Avatar;
+        public Sprite this[ETileType tileType] => _gemAvatars.Find(x => x.TileType == tileType).Avatar;
     }
 }

@@ -11,7 +11,7 @@ namespace _Scripts.Editor
     {
         private Dictionary<EGridPositionType, Color> _dictTargetColor = new();
         private const string CONFIG_FOLDER_PATH = "level_config_folder_path";
-        private string _folderPath;
+        private string _folderPath = "Assets/_Data/LevelConfig";
 
         private const int CELL_HEIGHT = 50;
         private const int CELL_WIDTH = 50;
@@ -33,7 +33,7 @@ namespace _Scripts.Editor
 
         private void OnEnable()
         {
-            _folderPath = EditorPrefs.GetString(CONFIG_FOLDER_PATH, "");
+            _folderPath = EditorPrefs.GetString(CONFIG_FOLDER_PATH, "Assets/_Data/LevelConfig");
             foreach (EGridPositionType t in Enum.GetValues(typeof(EGridPositionType)))
             {
                 if (!_dictTargetColor.ContainsKey(t))
@@ -122,10 +122,16 @@ namespace _Scripts.Editor
                 if (GUILayout.Button("...", GUILayout.Width(35)))
                 {
                     string selected = EditorUtility.OpenFolderPanel("Chọn folder", _folderPath, "");
+                    
                     if (!string.IsNullOrEmpty(selected))
                     {
-                        _folderPath = selected;
-                        EditorPrefs.SetString(CONFIG_FOLDER_PATH, _folderPath); // save
+                        string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+
+                        if (selected.StartsWith(projectRoot))
+                        {
+                            _folderPath = selected.Substring(projectRoot.Length + 1);
+                            EditorPrefs.SetString(CONFIG_FOLDER_PATH, _folderPath); // save
+                        }
                     }
                 }
             }
@@ -254,16 +260,13 @@ namespace _Scripts.Editor
             {
                 _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
                 {
-                    int midX = Definition.BOARD_WIDTH / 2;
-                    int midY = Definition.BOARD_HEIGHT / 2;
-                    
-                    for (int y = midY - 1; y >= -midY; y--)
+                    for (int y = Definition.BOARD_HEIGHT - 1; y >= 0; y--)
                     {
                         EditorGUILayout.BeginHorizontal();
                         {
-                            for (int x = midX - 1; x >= -midX; x--)
+                            for (int x = 0; x < Definition.BOARD_WIDTH; x++)
                             {
-                                _DrawGridPositionButton(x + midX, y + midY);
+                                _DrawGridPositionButton(x, y);
                             }
                         }
                         EditorGUILayout.EndHorizontal();

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using _Scripts.Gem;
-using _Scripts.Grid.Gem;
+using _Scripts.Tile;
+using _Scripts.Grid;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -10,14 +10,14 @@ namespace _Scripts.Grid
 {
     public partial class BoardController
     {
-        private NormalGemPosition _currentPosition;
+        private NormalTilePosition _currentPosition;
         private void _OnBeginSwipe(Coordinates coordinates)
         {
             if (_boardState is EBoardState.Shuffling)
             {
                 return;
             }
-            _currentPosition = _gemPositions[coordinates.x, coordinates.y];
+            _currentPosition = _tilePositions[coordinates.x, coordinates.y];
             if (_currentPosition.IsAvailable() || _currentPosition.PositionState() is not EPositionState.Free)
             {
                 _currentPosition = null;
@@ -31,57 +31,71 @@ namespace _Scripts.Grid
                 return;
             }
             
-            if (_boardState == EBoardState.Shuffling || direction == ESwipeDirection.Cancel )
+            if (_boardState == EBoardState.Shuffling)
             {
                 _currentPosition = null;
                 return;
             }
             
-            NormalGemPosition position2 = _GetSwipePosition(_currentPosition.Coordinates(), direction);
+            NormalTilePosition position2 = _GetSwipePosition(_currentPosition.Coordinates(), direction);
 
-            if (position2.IsAvailable() || position2.PositionState() is not EPositionState.Free)
+            if (position2 == null ||  position2.IsAvailable() || position2.PositionState() is not EPositionState.Free)
             {
                 _currentPosition = null;
+                return;
+            }
+
+            if (_currentPosition == position2)
+            {
+                //trigger 
+                if (_currentPosition.CurrentTile is SpecialTile specialGem)
+                {
+                    NormalTilePosition temp = _currentPosition;
+                    _MatchHandler((temp, new List<NormalTilePosition>(){temp}), bySwipe: true);
+                    _currentPosition = null;
+                }
                 return;
             }
             
             //swap
-            NormalGemPosition position1 = _currentPosition;
-            IGem gem1 = position1.CurrentGem;
-            IGem gem2 = position2.CurrentGem;
+            NormalTilePosition position1 = _currentPosition;
+            ITile gem1 = position1.CurrentTile;
+            ITile gem2 = position2.CurrentTile;
             
             //Check
-            position2.SetFutureGem(gem1);
-            position1.SetFutureGem(gem2);
+            position2.SetFutureGem(gem1, true);
+            position1.SetFutureGem(gem2, true);
 
             //gem1 at p2 || gem2 at p1
-            bool isMatchAtPosition1 = _IsMatchAt(position1.Coordinates(), out (NormalGemPosition origin, List<NormalGemPosition> matchedGem) match1);
-            bool isMatchAtPosition2 = _IsMatchAt(position2.Coordinates(), out (NormalGemPosition origin, List<NormalGemPosition> matchedGem) match2);
+            bool isMatchAtPosition1 = _IsMatchAt(position1.Coordinates(), out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match1);
+            bool isMatchAtPosition2 = _IsMatchAt(position2.Coordinates(), out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match2);
             
             if (isMatchAtPosition1 || isMatchAtPosition2)
             {
+                position1.ChangePositionState(EPositionState.Busy);
+                position2.ChangePositionState(EPositionState.Busy);
+                
                 _ = gem1.Swap(position2.Transform().position, async () =>
                 {
                     UniTask t1 = new UniTask();
                     if (isMatchAtPosition1)
                     {
-                        t1 = _MatchHandler(match1);
+                        t1 = _MatchHandler(match1, bySwipe: true);
                     }
 
                     if (isMatchAtPosition2)
                     {
-                        t1 = _MatchHandler(match2);
+                        t1 = _MatchHandler(match2, bySwipe: true);
                     }
 
                     await t1;
 
-                    position2.CompleteReceivedGem();
-                    _FillBoard();
+                    position2.CompleteReceivedTile();
                 });
             
                 _ = gem2.Swap(position1.Transform().position, () =>
                 {
-                    position1.CompleteReceivedGem();
+                    position1.CompleteReceivedTile();
                 });
             }
             else
@@ -104,10 +118,14 @@ namespace _Scripts.Grid
             _currentPosition = null;
         }
 
-        private NormalGemPosition _GetSwipePosition(Coordinates coordinates, ESwipeDirection direction)
+        private NormalTilePosition _GetSwipePosition(Coordinates coordinates, ESwipeDirection direction)
         {
             switch (direction)
             {
+                case ESwipeDirection.Cancel:
+                {
+                    break;
+                }
                 case ESwipeDirection.Left:
                 {
                     coordinates.x -= 1;
@@ -134,15 +152,15 @@ namespace _Scripts.Grid
                 }
             }
 
-            if (!_IsInBounds(coordinates.x, coordinates.y))
+            if (!IsInBounds(coordinates.x, coordinates.y))
             {
                 return null;
             }
             
-            return _gemPositions[coordinates.x, coordinates.y];
+            return _tilePositions[coordinates.x, coordinates.y];
         }
         
-        private bool _IsMatchAt(Coordinates coordinates, out (NormalGemPosition origin, List<NormalGemPosition> matchedGem) match,
+        private bool _IsMatchAt(Coordinates coordinates, out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match,
             bool predict = false)
         {
             int x = coordinates.x;
@@ -150,109 +168,267 @@ namespace _Scripts.Grid
             
             match = new ()
             {
-                matchedGem = new()
+                matchedTile = new()
             };
             
-            if (!_IsInBounds(x, y))
+            if (!IsInBounds(x, y))
             {
                 return false;
             }
 
-            NormalGemPosition center = _gemPositions[x, y];
+            NormalTilePosition center = _tilePositions[x, y];
             
             match.origin = center;
             if (center.IsAvailable())
             {
+                Debug.LogError(center.Coordinates());
                 return false;
             }
 
-            EGemType target = center.CurrentGem.GemType();
+            if (predict && center.CurrentTile is SpecialTile)
+            {
+                match.matchedTile.Add(center);
+                return true;
+            }
+            
+            ETileType target = center.CurrentTile.TileType();
 
-            List<NormalGemPosition> horizontal = new (){ center };
+            List<NormalTilePosition> horizontal = new (){ center };
 
             int check = 0;
             
             // left
             check = x - 1;
-            while (_IsInBounds(check, y) && _IsTheSame(check, y, target, predict))
+            while (IsInBounds(check, y) && _IsTheSame(check, y, target, predict))
             {
-                horizontal.Add(_gemPositions[check, y]);
+                horizontal.Add(_tilePositions[check, y]);
                 check--;
             }
 
             // right
             check = x + 1;
-            while (_IsInBounds(check, y) && _IsTheSame(check, y, target, predict))
+            while (IsInBounds(check, y) && _IsTheSame(check, y, target, predict))
             {
-                horizontal.Add(_gemPositions[check, y]);
+                horizontal.Add(_tilePositions[check, y]);
                 check++;
             }
 
             // Nếu ngang >= 3 -> thêm vào result
             if (horizontal.Count >= 3)
             {
-                Debug.LogError("-----------------------");
+                Debug.Log("-----------------------");
                 horizontal.ForEach(z =>
                 {
-                    Debug.Log(z.Coordinates() + " " + z.CurrentGem.GemType());
+                    Debug.Log(z.Coordinates() + " " + z.CurrentTile.TileType());
                 });
-                match.matchedGem.AddRange(horizontal);
+                match.matchedTile.AddRange(horizontal);
             }
             
-            List<NormalGemPosition> vertical = new() { center };
+            List<NormalTilePosition> vertical = new() { center };
             //down
             check = y - 1;
-            while (_IsInBounds(x, check) && _IsTheSame(x, check, target, predict))
+            while (IsInBounds(x, check) && _IsTheSame(x, check, target, predict))
             {
-                vertical.Add(_gemPositions[x, check]);
+                vertical.Add(_tilePositions[x, check]);
                 check--;
             }
 
             //up
             check = y + 1;
-            while (_IsInBounds(x, check) && _IsTheSame(x, check, target, predict))
+            while (IsInBounds(x, check) && _IsTheSame(x, check, target, predict))
             {
-                vertical.Add(_gemPositions[x, check]);
+                vertical.Add(_tilePositions[x, check]);
                 check++;
             }
 
             if (vertical.Count >= 3)
             {
-                Debug.LogError("-----------------------");
+                Debug.Log("-----------------------");
                 vertical.ForEach(z =>
                 {
-                    Debug.Log(z.Coordinates() + " " + (z as NormalGemPosition).CurrentGem.GemType());
+                    Debug.Log(z.Coordinates() + " " + z.CurrentTile.TileType());
                 });
-                match.matchedGem.AddRange(vertical);
+                match.matchedTile.AddRange(vertical);
             }
 
-            match.matchedGem = match.matchedGem.Distinct().ToList();
+            match.matchedTile = match.matchedTile.Distinct().ToList();
 
-            return match.matchedGem.Count >= 3;
+            //square
+            if (match.matchedTile.Count <= 3)
+            {
+                //offset
+                (int x, int y)[] botLeftSquare = new []
+                {
+                    (x, y),
+                    (x - 1, y),
+                    (x, y - 1),
+                    (x - 1, y - 1)
+                };
+
+                foreach (var origin in botLeftSquare)
+                {
+                    if (!IsInBounds(origin.x, origin.y))
+                    {
+                        continue;
+                    }
+
+                    if (!IsInBounds(origin.x + 1, origin.y + 1))
+                    {
+                        continue;
+                    }
+                    
+                    NormalTilePosition bl = _tilePositions[origin.x, origin.y];
+                    NormalTilePosition br = _tilePositions[origin.x + 1, origin.y];
+                    NormalTilePosition tl = _tilePositions[origin.x, origin.y + 1];
+                    NormalTilePosition tr = _tilePositions[origin.x + 1, origin.y + 1];
+
+                    if (bl == null || br == null || tl == null || tr == null)
+                    {
+                        continue;
+                    }
+
+                    if (bl.IsAvailable() || br.IsAvailable() || tl.IsAvailable() || tr.IsAvailable())
+                    {
+                        continue;
+                    }
+                    
+                    if (!_IsTheSame(br.Coordinates(), bl.CurrentTile.TileType(), predict)
+                        || !_IsTheSame(tl.Coordinates(), bl.CurrentTile.TileType(), predict)
+                        || !_IsTheSame(tr.Coordinates(), bl.CurrentTile.TileType(), predict))
+                    {
+                        continue;
+                    }
+                    
+                    match.matchedTile.AddRange(new List<NormalTilePosition>()
+                    {
+                        bl, br, tl, tr
+                    });
+                    
+                    match.matchedTile = match.matchedTile.Distinct().ToList();
+                    break;
+                }
+            }
+
+            return match.matchedTile.Count >= 3;
         }
 
         private bool _IsMatchAt(Coordinates coordinates, bool predict = false)
         {
-            return _IsMatchAt(coordinates, out (NormalGemPosition origin, List<NormalGemPosition> matchedGem) _, predict);
+            return _IsMatchAt(coordinates, out (NormalTilePosition origin, List<NormalTilePosition> matchedGem) _, predict);
         }
 
-        private async UniTask _MatchHandler((NormalGemPosition origin, List<NormalGemPosition> matchedGem) match, int delayTime = 150)
+        private async UniTask _MatchHandler(
+            (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match, 
+            int delayTime = 150, 
+            bool bySwipe = false, 
+            bool autoFill = true)
         {
-            foreach (var gemPosition in match.matchedGem)
+            foreach (var gemPosition in match.matchedTile)
             {
                 gemPosition.ChangePositionState(EPositionState.Busy);
             }
-            await UniTask.Delay(delayTime);
-            foreach (var gemPosition in match.matchedGem)
+            
+            ETileType specialTileType = ETileType.None;
+            
+            //check special gem
+            if (match.origin != null)
             {
-                gemPosition.CrushGem();
+                int differentX = match.matchedTile
+                    .Where(x => x.Coordinates().x != match.origin.Coordinates().x)
+                    .GroupBy(x => x.Coordinates().y)
+                    .Select(x => x.Count())
+                    .DefaultIfEmpty(0)
+                    .Max() + 1;
+                int differentY = match.matchedTile
+                    .Where(x => x.Coordinates().y != match.origin.Coordinates().y)
+                    .GroupBy(x => x.Coordinates().x)
+                    .Select(x => x.Count())
+                    .DefaultIfEmpty(0)
+                    .Max() + 1;
+
+                switch (match.matchedTile.Count)
+                {
+                    case 4:
+                    {
+                        if (differentX == differentY)
+                        {
+                            specialTileType = ETileType.PinWheel;
+                        }
+                        else
+                        {
+                            specialTileType = ETileType.Rocket;
+                        }
+                        break;
+                    }
+                    case 5:
+                    {
+                        Debug.LogError(differentX);
+                        Debug.LogError(differentY);
+                        if (differentX == 2 || differentY == 2)
+                        {
+                            specialTileType = ETileType.PinWheel;
+                            break;
+                        }
+
+                        if (differentX == 1 || differentY == 1)
+                        {
+                            specialTileType = ETileType.LightBall;
+                            break;
+                        }
+
+                        specialTileType = ETileType.Boom;
+                        break;
+                    }
+                    case > 5:
+                    {
+                        if (differentX > 5 || differentY > 5)
+                        {
+                            specialTileType = ETileType.LightBall;
+                            break;
+                        }
+
+                        specialTileType = ETileType.Boom;
+                        break;
+                    }
+                }
+                
+                if (!bySwipe && specialTileType is not ETileType.None)
+                {
+                    match.origin = match.matchedTile.OrderByDescending(x => x.Coordinates().y).ThenBy(x => x.Coordinates().x).ToList()[0];
+                }
+            }
+            
+            await UniTask.Delay(delayTime);
+
+            foreach (var gemPosition in match.matchedTile)
+            {
+                if (gemPosition.CurrentTile is SpecialTile)
+                {
+                    _TriggerSpecialTile(gemPosition);
+                    continue;
+                }
+
+                gemPosition.CrushTile();
                 gemPosition.ChangePositionState(EPositionState.Free);
+            }
+
+            //create special tile
+            if (specialTileType is not ETileType.None)
+            {
+                ITile specialTile = TileFactory(specialTileType, match.origin.Transform().position, 0);
+                specialTile.GameObject().SetActive(true);
+                match.origin.SetFutureGem(specialTile, true);
+            }
+
+            if (autoFill)
+            {
+                _FillBoard();
             }
         }
 
-        private bool _IsTheSame(int x, int y, EGemType gemType, bool predict = false)
+        private bool _IsTheSame(int x, int y, ETileType tileType, bool predict = false)
         {
-            NormalGemPosition target = _gemPositions[x, y];
+            NormalTilePosition target = _tilePositions[x, y];
             
             if (target == null)
             {
@@ -275,8 +451,18 @@ namespace _Scripts.Grid
             // {
             //     return false;
             // }
+
+            if (target.CurrentTile is SpecialTile)
+            {
+                return false;
+            }
             
-            return target.CurrentGem.GemType() == gemType;
+            return target.CurrentTile.TileType() == tileType;
+        }
+        
+        private bool _IsTheSame(Coordinates origin, ETileType tileType, bool predict = false)
+        {
+            return _IsTheSame(origin.x, origin.y, tileType, predict);
         }
     }
 }

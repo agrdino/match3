@@ -6,12 +6,12 @@
         public const int BOARD_HEIGHT = 10;
 
         public const float MOVE_TIME_PER_UNIT = 0.1f;
-        public const float MIN_SWIPE_DISTENCE = 1f;
+        public const float MIN_SWIPE_DISTENCE = 50f;
 
         public const float DELAY_TO_SHUFFLE = 1;
     }
 
-    public enum EGemType
+    public enum ETileType
     {
         None,
         Yellow,
@@ -19,6 +19,10 @@
         Red,
         Blue,
         Orange,
+        PinWheel,
+        Rocket,
+        Boom,
+        LightBall,
     }
 
     public enum EGridPositionType

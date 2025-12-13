@@ -2,15 +2,17 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace _Scripts.Gem
+namespace _Scripts.Tile
 {
-    public interface IGem
+    public interface ITile
     {
         public Transform Transform();
         public GameObject GameObject();
-        public EGemType GemType();
+        public ETileType TileType();
 
-        public void SetUp(EGemType gemType, int row);
+        public event Action onCrushed;
+
+        public void SetUp(ETileType tileType, int row);
         public void Crush();
         public void MoveTo(Vector3 targetPosition, int order, Action onCompleteMoveCallback);
         public UniTask Swap(Vector3 target, Action callback = null);

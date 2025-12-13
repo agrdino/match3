@@ -47,13 +47,21 @@ MonoBehaviour:
   _levelConfigs:
   - {fileID: 11400000, guid: 9e207cbee30c9480fab3286850a92509, type: 2}
   _gemAvatars:
-  - _gemType: 1
+  - tileType: 1
     _avatar: {fileID: 21300000, guid: 2696d4b537a344a77a4dd26da4e3c445, type: 3}
-  - _gemType: 2
+  - tileType: 2
     _avatar: {fileID: 21300000, guid: ef82a3798a6134ec1b08dc26cd6a6ab7, type: 3}
-  - _gemType: 3
+  - tileType: 3
     _avatar: {fileID: 21300000, guid: d699e566c12f74d62930182c9b2b0b70, type: 3}
-  - _gemType: 4
+  - tileType: 4
     _avatar: {fileID: 21300000, guid: 906842f76195347488beb09180b98497, type: 3}
-  - _gemType: 5
+  - tileType: 5
     _avatar: {fileID: 21300000, guid: 6cb1129c64b3948cda55ed5c7354a9b5, type: 3}
+  - tileType: 6
+    _avatar: {fileID: 21300000, guid: 0c6ec025b16174783b4c172b5d020fc9, type: 3}
+  - tileType: 7
+    _avatar: {fileID: 21300000, guid: bf156f78c15cd4bdfb3ea9170ba93f72, type: 3}
+  - tileType: 8
+    _avatar: {fileID: 21300000, guid: 8d1aa873b460442ecae59843e64cf173, type: 3}
+  - tileType: 9
+    _avatar: {fileID: 21300000, guid: c0bb3310ad81d49578fc38d0c3783cd0, type: 3}

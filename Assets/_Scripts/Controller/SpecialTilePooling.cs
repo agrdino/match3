@@ -1,9 +1,9 @@
-using _Scripts.Gem;
 using _Scripts.Helper.Pooling;
+using _Scripts.Tile;
 
 namespace _Scripts.Controller
 {
-    public class GemPooling : SystemPooling<NormalGem>
+    public class SpecialTilePooling : SystemPooling<SpecialTile>
     {
         
     }

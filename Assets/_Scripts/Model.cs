@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace _Scripts
 {
@@ -25,10 +26,10 @@ namespace _Scripts
     [Serializable]
     public class GemAvatarModel
     {
-        [SerializeField] private EGemType _gemType;
+        [FormerlySerializedAs("_gemType")] [SerializeField] private ETileType tileType;
         [SerializeField] private Sprite _avatar;
 
-        public EGemType GemType => _gemType;
+        public ETileType TileType => tileType;
         public Sprite Avatar => _avatar;
     }
 }

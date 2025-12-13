@@ -1,13 +1,13 @@
 ﻿using System;
 using _Scripts.Controller;
 using _Scripts.Helper.Pooling;
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
-using Redcode.Extensions;
 using UnityEngine;
 
-namespace _Scripts.Gem
+namespace _Scripts.Tile
 {
-    public abstract class BaseGem : ObjectPooling
+    public abstract class BaseTile : ObjectPooling
     {
         #region ----- Component Config -----
 
@@ -19,7 +19,7 @@ namespace _Scripts.Gem
 
         protected float _delayMove; 
         
-        protected EGemType _gemType;
+        protected ETileType _tileType;
         protected Vector3 _targetPosition;
         protected float _velocity;
         protected Action _onCompleteMove;
@@ -31,14 +31,16 @@ namespace _Scripts.Gem
 
         public Transform Transform() => transform;
         public GameObject GameObject() => gameObject;
-        public virtual EGemType GemType() => _gemType;
+        public virtual ETileType TileType() => _tileType;
+
+        public event Action onCrushed;
 
         #endregion
         
-        public virtual void SetUp(EGemType gemType, int order)
+        public virtual void SetUp(ETileType tileType, int order)
         {
-            _gemType = gemType;
-            _spriteRenderer.sprite = Config.Instance[gemType];
+            _tileType = tileType;
+            _spriteRenderer.sprite = Config.Instance[tileType];
         }
 
         public virtual void MoveTo(Vector3 targetPosition, int order, Action onCompleteMoveCallback)
@@ -51,6 +53,27 @@ namespace _Scripts.Gem
                 _isMoving = true;
                 DOVirtual.Float(0, 1, 0.25f, value => _velocity = value).SetDelay(_delayMove).SetEase(Ease.InCubic);
             }
+        }
+
+        public virtual async UniTask Swap(Vector3 target, Action callback = null)
+        {
+            await transform.DOMove(target, 0.25f).ToUniTask();
+            callback?.Invoke();
+        }
+
+        public virtual async UniTask SwapAndSwapBack(Vector3 target, Action callback = null)
+        {
+            Sequence sequence = DOTween.Sequence();
+            sequence.Append(transform.DOMove(target, 0.15f));
+            sequence.Append(transform.DOMove(transform.position, 0.15f));
+            await sequence.ToUniTask();
+            callback?.Invoke();
+        }
+
+        public virtual void Crush()
+        {
+            gameObject.SetActive(false);
+            onCrushed?.Invoke();
         }
 
         private void LateUpdate()

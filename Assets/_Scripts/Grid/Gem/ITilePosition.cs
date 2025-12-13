@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 
-namespace _Scripts.Grid.Gem
+namespace _Scripts.Grid
 {
-    public interface IGemPosition
+    public interface ITilePosition
     {
         public Transform Transform();
         public GameObject GameObject();
@@ -11,8 +11,8 @@ namespace _Scripts.Grid.Gem
         public EGridPositionType GridPositionType();
         public bool IsAvailable();
         public EPositionState PositionState();
-        public void CreateGemPosition(Coordinates coordinates, GameObject gameObject, Transform transform);
+        public void CreateTilePosition(Coordinates coordinates, GameObject gameObject, Transform transform);
         public void ChangePositionState(EPositionState newState);
-        public void CrushGem();
+        public void CrushTile();
     }
 }
