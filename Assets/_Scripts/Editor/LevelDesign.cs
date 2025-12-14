@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using _Data.LevelConfig;
+using _Scripts.Grid;
 using UnityEditor;
 using UnityEngine;
 
@@ -231,6 +232,14 @@ namespace _Scripts.Editor
                 return;
             }
 
+            if (!_IsValid())
+            {
+                EditorUtility.DisplayDialog(
+                    "Error",
+                    "Không có vị trí hợp lệ!",
+                    "Yes");
+            }
+
             bool confirm = EditorUtility.DisplayDialog(
                 "Save",
                 "Are you sure?",
@@ -247,6 +256,58 @@ namespace _Scripts.Editor
             }
         }
 
+        private bool _IsValid()
+        {
+            //3 in a row
+            //or square
+            for (int x = 0; x < Definition.BOARD_WIDTH; x++)
+            {
+                for (int y = 0; y < Definition.BOARD_HEIGHT; y++)
+                {
+                    if (_cacheGridPosition[x, y].type == EGridPositionType.None)
+                    {
+                        continue;
+                    }
+
+                    //horizontal
+                    if (GridController.IsInBounds(x + 1, y) 
+                        && GridController.IsInBounds(x + 2, y))
+                    {
+                        if (_cacheGridPosition[x + 1, y].type == EGridPositionType.Gem 
+                            && _cacheGridPosition[x + 2, y].type == EGridPositionType.Gem)
+                        {
+                            return true;
+                        }
+                    }
+                    
+                    //vertical
+                    if (GridController.IsInBounds(x, y + 1) 
+                        && GridController.IsInBounds(x, y +2))
+                    {
+                        if (_cacheGridPosition[x, y + 1].type == EGridPositionType.Gem 
+                            && _cacheGridPosition[x, y + 2].type == EGridPositionType.Gem)
+                        {
+                            return true;
+                        }
+                    }
+
+                    //square
+                    if (GridController.IsInBounds(x + 1, y)
+                        && GridController.IsInBounds(x, y + 1)
+                        && GridController.IsInBounds(x + 1, y + 1))
+                    {
+                        if (_cacheGridPosition[x + 1, y].type == EGridPositionType.Gem
+                            && _cacheGridPosition[x, y + 1].type == EGridPositionType.Gem
+                            && _cacheGridPosition[x + 1, y + 1].type == EGridPositionType.Gem)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
 
         #endregion
         

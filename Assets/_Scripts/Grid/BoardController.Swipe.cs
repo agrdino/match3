@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using _Scripts.Controller;
 using _Scripts.Tile;
-using _Scripts.Grid;
+using _Scripts.Tile.Animation;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -45,20 +46,33 @@ namespace _Scripts.Grid
                 return;
             }
 
-            if (_currentPosition == position2)
+            if (_currentPosition.CurrentTile is SpecialTile || position2.CurrentTile is SpecialTile)
             {
-                //trigger 
-                if (_currentPosition.CurrentTile is SpecialTile specialGem)
-                {
-                    NormalTilePosition temp = _currentPosition;
-                    _MatchHandler((temp, new List<NormalTilePosition>(){temp}), bySwipe: true);
-                    _currentPosition = null;
-                }
+                _SpecialSwap(_currentPosition, position2);
+            }
+            else
+            {
+                _NormalSwap(_currentPosition, position2);
+            }
+            _currentPosition = null;
+        }
+
+        private void _SpecialSwap(NormalTilePosition position1, NormalTilePosition position2)
+        {
+            if (position1 == position2)
+            {
+                _TriggerSpecialTile(position1);
                 return;
             }
             
-            //swap
-            NormalTilePosition position1 = _currentPosition;
+            if (position1.CurrentTile is SpecialTile special1 && position2.CurrentTile is SpecialTile special2)
+            {
+                _MergeSpecialTile(position1, position2);
+            }
+        }
+
+        private void _NormalSwap(NormalTilePosition position1, NormalTilePosition position2)
+        {
             ITile gem1 = position1.CurrentTile;
             ITile gem2 = position2.CurrentTile;
             
@@ -114,8 +128,6 @@ namespace _Scripts.Grid
                     position1.ChangePositionState(EPositionState.Free);
                 });
             }
-            
-            _currentPosition = null;
         }
 
         private NormalTilePosition _GetSwipePosition(Coordinates coordinates, ESwipeDirection direction)
@@ -152,7 +164,7 @@ namespace _Scripts.Grid
                 }
             }
 
-            if (!IsInBounds(coordinates.x, coordinates.y))
+            if (!GridController.IsInBounds(coordinates.x, coordinates.y))
             {
                 return null;
             }
@@ -171,7 +183,7 @@ namespace _Scripts.Grid
                 matchedTile = new()
             };
             
-            if (!IsInBounds(x, y))
+            if (!GridController.IsInBounds(x, y))
             {
                 return false;
             }
@@ -181,7 +193,6 @@ namespace _Scripts.Grid
             match.origin = center;
             if (center.IsAvailable())
             {
-                Debug.LogError(center.Coordinates());
                 return false;
             }
 
@@ -199,7 +210,7 @@ namespace _Scripts.Grid
             
             // left
             check = x - 1;
-            while (IsInBounds(check, y) && _IsTheSame(check, y, target, predict))
+            while (GridController.IsInBounds(check, y) && _IsTheSame(check, y, target, predict))
             {
                 horizontal.Add(_tilePositions[check, y]);
                 check--;
@@ -207,7 +218,7 @@ namespace _Scripts.Grid
 
             // right
             check = x + 1;
-            while (IsInBounds(check, y) && _IsTheSame(check, y, target, predict))
+            while (GridController.IsInBounds(check, y) && _IsTheSame(check, y, target, predict))
             {
                 horizontal.Add(_tilePositions[check, y]);
                 check++;
@@ -227,7 +238,7 @@ namespace _Scripts.Grid
             List<NormalTilePosition> vertical = new() { center };
             //down
             check = y - 1;
-            while (IsInBounds(x, check) && _IsTheSame(x, check, target, predict))
+            while (GridController.IsInBounds(x, check) && _IsTheSame(x, check, target, predict))
             {
                 vertical.Add(_tilePositions[x, check]);
                 check--;
@@ -235,7 +246,7 @@ namespace _Scripts.Grid
 
             //up
             check = y + 1;
-            while (IsInBounds(x, check) && _IsTheSame(x, check, target, predict))
+            while (GridController.IsInBounds(x, check) && _IsTheSame(x, check, target, predict))
             {
                 vertical.Add(_tilePositions[x, check]);
                 check++;
@@ -267,12 +278,12 @@ namespace _Scripts.Grid
 
                 foreach (var origin in botLeftSquare)
                 {
-                    if (!IsInBounds(origin.x, origin.y))
+                    if (!GridController.IsInBounds(origin.x, origin.y))
                     {
                         continue;
                     }
 
-                    if (!IsInBounds(origin.x + 1, origin.y + 1))
+                    if (!GridController.IsInBounds(origin.x + 1, origin.y + 1))
                     {
                         continue;
                     }
@@ -317,10 +328,10 @@ namespace _Scripts.Grid
             return _IsMatchAt(coordinates, out (NormalTilePosition origin, List<NormalTilePosition> matchedGem) _, predict);
         }
 
-        private async UniTask _MatchHandler(
-            (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match, 
-            int delayTime = 150, 
-            bool bySwipe = false, 
+        private async UniTask _MatchHandler((NormalTilePosition origin, List<NormalTilePosition> matchedTile) match,
+            int delayTime = 150,
+            bool bySwipe = false,
+            bool bySpecial = false,
             bool autoFill = true)
         {
             foreach (var gemPosition in match.matchedTile)
@@ -331,7 +342,7 @@ namespace _Scripts.Grid
             ETileType specialTileType = ETileType.None;
             
             //check special gem
-            if (match.origin != null)
+            if (!bySpecial)
             {
                 int differentX = match.matchedTile
                     .Where(x => x.Coordinates().x != match.origin.Coordinates().x)
@@ -362,8 +373,6 @@ namespace _Scripts.Grid
                     }
                     case 5:
                     {
-                        Debug.LogError(differentX);
-                        Debug.LogError(differentY);
                         if (differentX == 2 || differentY == 2)
                         {
                             specialTileType = ETileType.PinWheel;
@@ -400,18 +409,19 @@ namespace _Scripts.Grid
             
             await UniTask.Delay(delayTime);
 
-            foreach (var gemPosition in match.matchedTile)
+            List<UniTask> allTileDestroyTask = new();
+            foreach (var tilePosition in match.matchedTile)
             {
-                if (gemPosition.CurrentTile is SpecialTile)
+                if (tilePosition.CurrentTile is SpecialTile)
                 {
-                    _TriggerSpecialTile(gemPosition);
+                    _TriggerSpecialTile(tilePosition);
                     continue;
                 }
 
-                gemPosition.CrushTile();
-                gemPosition.ChangePositionState(EPositionState.Free);
+                allTileDestroyTask.Add(CrushTile(tilePosition));
             }
 
+            await UniTask.WhenAll(allTileDestroyTask);
             //create special tile
             if (specialTileType is not ETileType.None)
             {
@@ -423,6 +433,17 @@ namespace _Scripts.Grid
             if (autoFill)
             {
                 _FillBoard();
+            }
+
+            async UniTask CrushTile(NormalTilePosition tilePosition)
+            {
+                // if(bySwipe || (!bySwipe && !bySpecial))
+                if (bySwipe || !bySpecial)
+                {
+                    await TileAnimationController.CrushAnimation.Play(tilePosition.CurrentTile.GameObject());
+                }
+                tilePosition.CrushTile();
+                tilePosition.ChangePositionState(EPositionState.Free);
             }
         }
 

@@ -1,20 +1,22 @@
 using _Scripts.Controller;
-using _Scripts.Tile;
 
 namespace _Scripts.Grid
 {
     public partial class BoardController
     {
-        private void _TriggerSpecialTile(NormalTilePosition tilePosition)
+        private void _TriggerSpecialTile(NormalTilePosition origin)
         {
-            if (tilePosition.CurrentTile is not SpecialTile specialGem)
+            SpecialTileHandler.Active(origin.CurrentTile.TileType(), origin, _tilePositions, targets =>
             {
-                return;
-            }
-            
-            SpecialTileController.Active(specialGem.TileType(), tilePosition, _tilePositions, targets =>
+                _ = _MatchHandler((null, targets), 0, bySpecial: true, autoFill: false);
+            } , () => _FillBoard());
+        }
+        
+        private void _MergeSpecialTile(NormalTilePosition origin, NormalTilePosition target)
+        {
+            SpecialTileHandler.Merge(origin, target, _tilePositions, targets =>
             {
-                _ = _MatchHandler((null, targets), 0, autoFill: false);
+                _ = _MatchHandler((null, targets), 0, bySpecial: true, autoFill: false);
             } , () => _FillBoard());
         }
     }

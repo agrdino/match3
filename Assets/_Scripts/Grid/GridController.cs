@@ -42,7 +42,7 @@ namespace _Scripts.Grid
         
         #endregion
 
-        #region ----- PublicFunction -----
+        #region ----- Public Function -----
 
         public void FindSpawnPosition()
         {
@@ -61,6 +61,25 @@ namespace _Scripts.Grid
             }
         }
         
+        #region ----- Public Function -----
+
+        public static bool IsInBounds(int x, int y)
+        {
+            if (x < 0 || y < 0)
+            {
+                return false;
+            }
+
+            if (x >= Definition.BOARD_WIDTH || y >= Definition.BOARD_HEIGHT)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        #endregion
+
         #endregion
     }
 }

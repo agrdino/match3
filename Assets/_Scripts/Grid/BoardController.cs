@@ -3,7 +3,6 @@ using System.Linq;
 using _Data.LevelConfig;
 using _Scripts.Controller;
 using _Scripts.Tile;
-using _Scripts.Grid;
 using Cysharp.Threading.Tasks;
 using NaughtyAttributes;
 using Redcode.Extensions;
@@ -250,7 +249,7 @@ namespace _Scripts.Grid
 
             do
             {
-                coordinates = coordinates.Shuffled().ToList();
+                // coordinates = coordinates.Shuffled().ToList();
                 gems = gems.Shuffled().ToList();
                 
                 for (var i = 0; i < coordinates.Count; i++)
@@ -333,19 +332,16 @@ namespace _Scripts.Grid
 
         #region ----- Public Function -----
 
-        public static bool IsInBounds(int x, int y)
+        public static bool IsNormalTilePosition(int x, int y, out NormalTilePosition normalTilePosition)
         {
-            if (x < 0 || y < 0)
+            normalTilePosition = null;
+            if (!GridController.IsInBounds(x, y))
             {
                 return false;
             }
 
-            if (x >= Definition.BOARD_WIDTH || y >= Definition.BOARD_HEIGHT)
-            {
-                return false;
-            }
-
-            return true;
+            normalTilePosition = _tilePositions[x, y];
+            return normalTilePosition != null;
         }
 
         #endregion

@@ -1,8 +1,4 @@
-﻿using System;
-using _Scripts.Controller;
-using Cysharp.Threading.Tasks;
-using DG.Tweening;
-using UnityEngine;
+﻿using _Scripts.Controller;
 
 namespace _Scripts.Tile
 {

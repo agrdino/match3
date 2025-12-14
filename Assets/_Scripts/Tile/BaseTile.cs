@@ -1,6 +1,7 @@
 ﻿using System;
 using _Scripts.Controller;
 using _Scripts.Helper.Pooling;
+using _Scripts.Tile.Animation;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UnityEngine;
@@ -12,6 +13,8 @@ namespace _Scripts.Tile
         #region ----- Component Config -----
 
         [SerializeField] protected SpriteRenderer _spriteRenderer;
+
+        private ITileAnimation _tileAnimation;
 
         #endregion
 
