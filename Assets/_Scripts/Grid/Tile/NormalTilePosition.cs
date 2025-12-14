@@ -1,5 +1,4 @@
 ﻿using _Scripts.Tile;
-using NaughtyAttributes;
 using UnityEngine;
 
 namespace _Scripts.Grid

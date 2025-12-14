@@ -4,41 +4,46 @@ using _Scripts.Grid;
 using _Scripts.Tile;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
+using UnityEngine;
 
 namespace _Scripts.Controller
 {
     public class PinWheelHandler : ISpecialTileHandler
     {
-        private ITile _pinWheel;
-        
         public async void Active(NormalTilePosition origin, NormalTilePosition[,] grid,
             Action<List<NormalTilePosition>> crushTileAction, Action completedActionCallback)
         {
-            NormalTilePosition target;
-            _pinWheel = origin.CurrentTile;
+            NormalTilePosition target = null;
+            ITile pinWheel = origin.CurrentTile;
             origin.ReleaseTile();
             completedActionCallback?.Invoke();
-
-            _pinWheel.onCrushed += ChangeTarget;
-            ChangeTarget();
             
-            void ChangeTarget()
+            ChangeTarget(null);
+
+            void ChangeTarget(BaseTile oldTarget)
             {
                 do
                 {
+                    if (oldTarget != null)
+                    {
+                        oldTarget.onCrushed -= ChangeTarget;
+                    }
+
                     target = grid[UnityEngine.Random.Range(0, Definition.BOARD_WIDTH),
                         UnityEngine.Random.Range(0, Definition.BOARD_HEIGHT)];
                 } while (target == null || target.IsAvailable() || target.PositionState() == EPositionState.Busy);
 
-                _pinWheel.Transform().DOKill();
-                _pinWheel.Transform().DOMove(target.Transform().position, 0.75f).SetEase(Ease.InCubic).OnComplete(async () =>
-                {
-                    _pinWheel.onCrushed -= ChangeTarget;
-                    _pinWheel.Crush();
-                    crushTileAction?.Invoke(new List<NormalTilePosition>(){target});
-                    await UniTask.Delay(150);
-                    completedActionCallback?.Invoke();
-                });
+                target.CurrentTile.onCrushed += ChangeTarget;
+
+                pinWheel.Transform().DOMove(target.Transform().position, 0.75f).SetEase(Ease.InCubic)
+                    .OnComplete(async () =>
+                    {
+                        target.CurrentTile.onCrushed -= ChangeTarget;
+                        pinWheel.Crush();
+                        crushTileAction?.Invoke(new List<NormalTilePosition>() { target });
+                        await UniTask.Delay(150);
+                        completedActionCallback?.Invoke();
+                    });
             }
         }
 
@@ -55,7 +60,6 @@ namespace _Scripts.Controller
                 }
                 case ETileType.Rocket:
                 case ETileType.Boom:
-                case ETileType.PinWheel:
                 {
                     ITile targetTile = target.CurrentTile;
                     targetTile.GameObject().SetActive(false);
@@ -69,6 +73,17 @@ namespace _Scripts.Controller
                         targetTile.GameObject().SetActive(true);
                         crushTileAction?.Invoke(targets);
                     }, completedActionCallback);
+                    break;
+                }
+                case ETileType.PinWheel:
+                {
+                    Active(target, grid, crushTileAction, completedActionCallback);
+                    Active(origin, grid, crushTileAction, completedActionCallback);
+                    ITile newSpinWheel =
+                        BoardController.TileFactory(ETileType.PinWheel, origin.Transform().position, 0);
+                    newSpinWheel.GameObject().SetActive(true);
+                    target.SetFutureGem(newSpinWheel);
+                    Active(target, grid, crushTileAction, completedActionCallback);
                     break;
                 }
                 default:

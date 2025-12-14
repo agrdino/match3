@@ -10,7 +10,7 @@ namespace _Scripts.Tile
         public GameObject GameObject();
         public ETileType TileType();
 
-        public event Action onCrushed;
+        public event Action<BaseTile> onCrushed;
 
         public void SetUp(ETileType tileType, int row);
         public void Crush();

@@ -98,10 +98,14 @@ namespace _Scripts.Grid
                     {
                         continue;
                     }
-                    
-                    NormalTilePosition nearestGame = _FindNearestGem(x, y);
+
+                    (EPositionState reason, NormalTilePosition nearestTile) = _FindNearestGem(x, y);
                     ITile nextTile = null;
-                    if (nearestGame == null)
+                    if (reason is EPositionState.Busy)
+                    {
+                        break;
+                    }
+                    if (nearestTile == null)
                     {
                         ETileType newTileType;
                         do
@@ -117,9 +121,9 @@ namespace _Scripts.Grid
                     }
                     else
                     {
-                        nextTile = nearestGame.CurrentTile;
+                        nextTile = nearestTile.CurrentTile;
                         gemPosition.SetFutureGem(nextTile);
-                        nearestGame.ReleaseTile();
+                        nearestTile.ReleaseTile();
                     }
                     
                     gemPosition.CurrentTile.MoveTo(gemPosition.Transform().position, order, async () =>
@@ -301,7 +305,7 @@ namespace _Scripts.Grid
             _FillBoard();
         }
         
-        private NormalTilePosition _FindNearestGem(int x, int y)
+        private (EPositionState reason, NormalTilePosition nearest) _FindNearestGem(int x, int y)
         {
             for (int i = y + 1; i < Definition.BOARD_HEIGHT; i++)
             {
@@ -315,10 +319,15 @@ namespace _Scripts.Grid
                     continue;
                 }
                 
-                return _tilePositions[x, i];
+                if (_tilePositions[x, i].PositionState() is EPositionState.Busy)
+                {
+                    return (EPositionState.Busy, null);
+                }
+                
+                return (EPositionState.Free, _tilePositions[x, i]);
             }
 
-            return null;
+            return (EPositionState.Free,null);
         }
 
         private ITile _CreateNewTile(int x, int y, ETileType tileType, int order)

@@ -13,7 +13,8 @@
 
     public enum ETileType
     {
-        None,
+        All = -1,
+        None = 0,
         Yellow,
         Green,
         Red,

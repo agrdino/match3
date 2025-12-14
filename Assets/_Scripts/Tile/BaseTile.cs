@@ -36,7 +36,7 @@ namespace _Scripts.Tile
         public GameObject GameObject() => gameObject;
         public virtual ETileType TileType() => _tileType;
 
-        public event Action onCrushed;
+        public event Action<BaseTile> onCrushed;
 
         #endregion
         
@@ -76,7 +76,7 @@ namespace _Scripts.Tile
         public virtual void Crush()
         {
             gameObject.SetActive(false);
-            onCrushed?.Invoke();
+            onCrushed?.Invoke(this);
         }
 
         private void LateUpdate()

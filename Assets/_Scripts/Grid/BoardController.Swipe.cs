@@ -438,6 +438,12 @@ namespace _Scripts.Grid
             async UniTask CrushTile(NormalTilePosition tilePosition)
             {
                 // if(bySwipe || (!bySwipe && !bySpecial))
+                tilePosition.ChangePositionState(EPositionState.Busy);
+                if (tilePosition.CurrentTile == null)
+                {
+                    tilePosition.ChangePositionState(EPositionState.Free);
+                    return;
+                }
                 if (bySwipe || !bySpecial)
                 {
                     await TileAnimationController.CrushAnimation.Play(tilePosition.CurrentTile.GameObject());
