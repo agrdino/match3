@@ -4,6 +4,7 @@ using _Scripts.Grid;
 using _Scripts.Tile;
 using _Scripts.Tile.Animation;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 
 namespace _Scripts.Controller
 {
@@ -19,8 +20,10 @@ namespace _Scripts.Controller
             origin.ReleaseTile();
 
             boomTile.SetSortingOrder(100);
+            boomTile.SetMask(SpriteMaskInteraction.None);
             await TileAnimationController.ZoomAnimation.Play(boomTile.GameObject());
             boomTile.Crush();
+            origin.ChangePositionState(EPositionState.Free);
             
             crushTileAction?.Invoke(targets);
             await UniTask.Delay(100);
@@ -46,6 +49,7 @@ namespace _Scripts.Controller
                     //get all target
                     
                     ITile boomTile = target.CurrentTile;
+                    boomTile.SetMask(SpriteMaskInteraction.None);
                     boomTile.SetSortingOrder(100);
                     target.ReleaseTile();
                     

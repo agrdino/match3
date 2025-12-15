@@ -4,6 +4,9 @@ using _Scripts.Grid;
 using _Scripts.Tile;
 using _Scripts.Tile.Animation;
 using Cysharp.Threading.Tasks;
+using Unity.Android.Gradle.Manifest;
+using UnityEngine;
+using Action = System.Action;
 using Random = UnityEngine.Random;
 
 namespace _Scripts.Controller
@@ -26,8 +29,10 @@ namespace _Scripts.Controller
             }
             
             oldTile.SetSortingOrder(100);
+            oldTile.SetMask(SpriteMaskInteraction.None);
             await TileAnimationController.ChargeAnimation.Play(oldTile.GameObject(), targets.Count * 0.1f + 0.15f);
             oldTile.Crush();
+            origin.ChangePositionState(EPositionState.Free);
 
             crushTileAction?.Invoke(targets);
  
@@ -39,10 +44,22 @@ namespace _Scripts.Controller
             Action<List<NormalTilePosition>> crushTileAction,
             Action completedActionCallback, bool isSwapped = false)
         {
+            NormalTilePosition center = null;
             ETileType targetTile = target.CurrentTile.TileType();
+
             ITile oldTile = origin.CurrentTile;
-            target.CrushTile();
+
+            if (!isSwapped)
+            {
+                oldTile.Transform().position = target.Transform().position;
+                center = target;
+            }
+            else
+            {
+                center = origin;
+            }
             origin.ReleaseTile();
+            target.CrushTile();
 
             List<NormalTilePosition> targets = new();
             switch (targetTile)
@@ -53,7 +70,7 @@ namespace _Scripts.Controller
                 {
                     targets = _GetTargets(grid);
                     oldTile.SetSortingOrder(100);
-                    
+                    oldTile.SetMask(SpriteMaskInteraction.None);
                     TileAnimationController.ChargeAnimation.Play(oldTile.GameObject(),
                         targets.Count * 0.1f + 0.15f);
 
@@ -73,13 +90,14 @@ namespace _Scripts.Controller
                     
                     await UniTask.Delay(100);
                     
-                    //create one more
                     oldTile.Crush();
+
+                    //create one more
                     newTile =
-                        BoardController.TileFactory(targetTile, origin.Transform().position, 0);
+                        BoardController.TileFactory(targetTile, center.Transform().position, 0);
                     newTile.GameObject().SetActive(true);
-                    origin.SetFutureGem(newTile);
-                    targets.Add(origin);
+                    center.SetFutureGem(newTile);
+                    targets.Add(center);
 
                     await UniTask.Delay(100);
 
@@ -96,6 +114,7 @@ namespace _Scripts.Controller
                     }
 
                     oldTile.SetSortingOrder(100);
+                    oldTile.SetMask(SpriteMaskInteraction.None);
                     await TileAnimationController.ChargeAnimation.Play(target.CurrentTile.GameObject(), targets.Count * 0.05f + 0.1f);
 
                     oldTile.Crush();
@@ -109,18 +128,30 @@ namespace _Scripts.Controller
                 case ETileType.Orange:
                 {
                     targets = _GetTargets(grid, targetTile);
+                    TileAnimationController.ChargeAnimation.Play(oldTile.GameObject(), targets.Count * 0.1f + 0.15f);
                     for (var i = 0; i < targets.Count; i++)
                     {
                         TileAnimationController.ChargeAnimation.Play(targets[i].CurrentTile.GameObject(),
-                            (targets.Count - i) * 0.1f + 0.15f,
-                            i * 0.1f);
+                            (targets.Count - i) * 0.1f + 0.15f);
+                        
+                        await UniTask.Delay(100);
                     }
-            
+
+                    await UniTask.Delay(100);
+                    
                     oldTile.SetSortingOrder(100);
-                    await TileAnimationController.ChargeAnimation.Play(oldTile.GameObject(), targets.Count * 0.1f + 0.15f);
+                    oldTile.SetMask(SpriteMaskInteraction.None);
                     oldTile.Crush();
+                    
+                    //create one more
+                    ITile newTile =
+                        BoardController.TileFactory(targetTile, center.Transform().position, 0);
+                    newTile.GameObject().SetActive(true);
+                    
+                    center.SetFutureGem(newTile);
+                    targets.Add(center);
                     crushTileAction?.Invoke(new List<NormalTilePosition>(targets));
- 
+                    
                     await UniTask.Delay(100);
                     completedActionCallback?.Invoke();
 

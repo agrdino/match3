@@ -29,7 +29,7 @@
     public enum EGridPositionType
     {
         None,
-        Gem,
+        Tile,
     }
     
     public enum EPositionState

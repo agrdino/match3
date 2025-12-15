@@ -36,6 +36,7 @@ namespace _Scripts.Controller
                 target.CurrentTile.onCrushed += ChangeTarget;
 
                 pinWheel.SetSortingOrder(100);
+                pinWheel.SetMask(SpriteMaskInteraction.None);
                 pinWheel.Transform().DOMove(target.Transform().position, 0.75f).SetEase(Ease.InCubic)
                     .OnComplete(async () =>
                     {
@@ -80,11 +81,14 @@ namespace _Scripts.Controller
                 {
                     Active(target, grid, crushTileAction, null);
                     Active(origin, grid, crushTileAction, null);
+                    crushTileAction?.Invoke(new List<NormalTilePosition>(){origin, target});
+                    target.ReleaseTile();
                     ITile newSpinWheel =
                         BoardController.TileFactory(ETileType.PinWheel, origin.Transform().position, 0);
                     newSpinWheel.GameObject().SetActive(true);
                     target.SetFutureGem(newSpinWheel);
-                    Active(target, grid, crushTileAction, null);
+                    crushTileAction?.Invoke(new List<NormalTilePosition>(){target});
+                    // Active(target, grid, crushTileAction, null);
                     completedActionCallback?.Invoke();
                     break;
                 }

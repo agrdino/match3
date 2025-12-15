@@ -12,12 +12,12 @@ namespace _Scripts.Grid
             } , () => _FillBoard());
         }
         
-        private void _MergeSpecialTile(NormalTilePosition origin, NormalTilePosition target)
+        private void _MergeSpecialTile(NormalTilePosition origin, NormalTilePosition target, bool isSwapped = false)
         {
             SpecialTileHandler.Merge(origin, target, _tilePositions, targets =>
             {
                 _ = _MatchHandler((null, targets), 0, bySpecial: true, autoFill: false);
-            } , () => _FillBoard());
+            } , () => _FillBoard(), isSwapped);
         }
     }
 }

@@ -26,7 +26,7 @@ namespace _Data.LevelConfig
                     gridConfig = new GridConfigModel()
                     {
                         coordinates = new Coordinates(x + midX, y + midY),
-                        type = EGridPositionType.Gem
+                        type = EGridPositionType.Tile
                     };
                     gridConfigs.Add(gridConfig);
                 }

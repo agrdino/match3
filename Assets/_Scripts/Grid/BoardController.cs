@@ -44,7 +44,7 @@ namespace _Scripts.Grid
             foreach (var gridConfig in _levelConfig.gridConfigs)
             {
                 ITilePosition position = _gridController.Grids[gridConfig.coordinates.x, gridConfig.coordinates.y].CreatTilePosition(gridConfig);
-                if (gridConfig.type is EGridPositionType.Gem)
+                if (gridConfig.type is EGridPositionType.Tile)
                 {
                     _tilePositions[gridConfig.coordinates.x, gridConfig.coordinates.y] = position as NormalTilePosition;
                     _gridController.Grids[gridConfig.coordinates.x, gridConfig.coordinates.y].onBeginSwipe += _OnBeginSwipe;
@@ -52,6 +52,43 @@ namespace _Scripts.Grid
                 }
             }
             _gridController.FindSpawnPosition();
+
+            List<GridPosition> checkingPosition = new();
+            bool down = false;
+            for (int x = 0; x < Definition.BOARD_WIDTH; x++)
+            {
+                down = false;
+                for (int y = 0; y < Definition.BOARD_HEIGHT; y++)
+                {
+                    if (!down)
+                    {
+                        if (_gridController.Grids[x, y].TilePosition.GridPositionType() == EGridPositionType.None)
+                        {
+                            continue;
+                        }
+
+                        down = true;
+                    }
+                    else
+                    {
+                        if (_gridController.Grids[x, y].TilePosition.GridPositionType() == EGridPositionType.None)
+                        {
+                            checkingPosition.Add(_gridController.Grids[x, y]);
+                        }
+                        else
+                        {
+                            if (checkingPosition.Count == 0)
+                            {
+                                continue;
+                            }
+                            checkingPosition.ForEach(p => p.SetMask(true));   
+                            checkingPosition.Clear();
+                            down = false;
+                        }
+                    }
+                }
+                checkingPosition.Clear();
+            }
             
             _FillBoard(true);
             _boardState = EBoardState.Free;
@@ -81,6 +118,7 @@ namespace _Scripts.Grid
         
         private async void _FillBoard(bool firstTime = false, bool isSub = false)
         {
+            Debug.LogError("fill");
             int order = 0;
             ITilePosition currentPosition;
             
@@ -93,12 +131,12 @@ namespace _Scripts.Grid
                 for (int y = 0; y < Definition.BOARD_HEIGHT; y++)
                 {
                     currentPosition = _tilePositions[x, y];
-                    if (currentPosition is not NormalTilePosition gemPosition)
+                    if (currentPosition is not NormalTilePosition tilePosition)
                     {
                         continue;
                     }
 
-                    if (!gemPosition.IsAvailable())
+                    if (!tilePosition.IsAvailable())
                     {
                         continue;
                     }
@@ -107,6 +145,7 @@ namespace _Scripts.Grid
                     ITile nextTile = null;
                     if (reason is EPositionState.Busy)
                     {
+                        Debug.LogError(currentPosition.Coordinates());
                         needToRefill = true;
                         continue;
                     }
@@ -119,28 +158,28 @@ namespace _Scripts.Grid
                             newTileType = (ETileType)Random.Range((int)ETileType.Yellow, (int)ETileType.Orange + 1);
                             nextTile = _CreateNewTile(x, y, newTileType, order);
                             nextTile.GameObject().SetActive(true);
-                            gemPosition.SetFutureGem(nextTile);
-                        } while (firstTime && _IsMatchAt(gemPosition.Coordinates(), predict: true));
+                            tilePosition.SetFutureGem(nextTile);
+                        } while (firstTime && _IsMatchAt(tilePosition.Coordinates(), predict: true));
 
                         order++;
                     }
                     else
                     {
                         nextTile = nearestTile.CurrentTile;
-                        gemPosition.SetFutureGem(nextTile);
+                        tilePosition.SetFutureGem(nextTile);
                         nearestTile.ReleaseTile();
                     }
 
                     var refill = needToRefill;
-                    gemPosition.CurrentTile.MoveTo(gemPosition.Transform().position, order, async () =>
+                    tilePosition.CurrentTile.MoveTo(tilePosition.Transform().position, order, async () =>
                     {
-                        gemPosition.CompleteReceivedTile();
+                        tilePosition.CompleteReceivedTile();
                         if (firstTime)
                         {
                             return;
                         }
                         
-                        if (_IsMatchAt(gemPosition.Coordinates(), out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match))
+                        if (_IsMatchAt(tilePosition.Coordinates(), out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match))
                         {
                             _ = _MatchHandler(match, 250);
                         }

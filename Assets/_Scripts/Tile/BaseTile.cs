@@ -4,6 +4,7 @@ using _Scripts.Helper.Pooling;
 using _Scripts.Tile.Animation;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
+using Redcode.Extensions;
 using UnityEngine;
 
 namespace _Scripts.Tile
@@ -44,12 +45,18 @@ namespace _Scripts.Tile
         {
             _tileType = tileType;
             _spriteRenderer.sprite = Config.Instance[tileType];
+            SetMask(SpriteMaskInteraction.VisibleInsideMask);
             SetSortingOrder(0);
         }
 
         public virtual void SetSortingOrder(int sortingOrder)
         {
             _spriteRenderer.sortingOrder = sortingOrder;
+        }
+
+        public virtual void SetMask(SpriteMaskInteraction spriteMaskInteraction)
+        {
+            _spriteRenderer.maskInteraction = spriteMaskInteraction;
         }
 
         public virtual void MoveTo(Vector3 targetPosition, int order, Action onCompleteMoveCallback)
@@ -82,6 +89,7 @@ namespace _Scripts.Tile
         public virtual void Crush()
         {
             gameObject.SetActive(false);
+            transform.DOKill();
             onCrushed?.Invoke(this);
         }
 
@@ -92,7 +100,7 @@ namespace _Scripts.Tile
                 return;
             }
 
-            if (Vector3.Distance(transform.position, _targetPosition) < 0.1f)
+            if (transform.position.y < _targetPosition.y && Vector3.Distance(transform.position, _targetPosition) < 0.1f)
             {
                 _isMoving = false;
                 _onCompleteMove?.Invoke();
@@ -102,7 +110,7 @@ namespace _Scripts.Tile
                 return; 
             }
             
-            transform.position += (Time.deltaTime / Definition.MOVE_TIME_PER_UNIT) * _velocity * (_targetPosition - transform.position).normalized;
+            transform.position += (Time.deltaTime * 1.25f / Definition.MOVE_TIME_PER_UNIT) * _velocity * (_targetPosition - transform.position).normalized;
         }
     }
 }

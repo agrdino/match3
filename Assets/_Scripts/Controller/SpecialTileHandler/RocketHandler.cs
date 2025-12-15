@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using _Scripts.Grid;
 using _Scripts.Tile;
 using Cysharp.Threading.Tasks;
+using DG.Tweening;
+using Redcode.Extensions;
+using UnityEngine;
 
 namespace _Scripts.Controller
 {
@@ -11,15 +14,32 @@ namespace _Scripts.Controller
         public async void Active(NormalTilePosition origin, NormalTilePosition[,] grid,
             Action<List<NormalTilePosition>> crushTileAction, Action completedActionCallback)
         {
+            //fake anim
+            await UniTask.Delay(100);
+            
+            ITile animUp = BoardController.TileFactory(ETileType.Rocket, origin.Transform().position, 0);
+            ITile animDown = BoardController.TileFactory(ETileType.Rocket, origin.Transform().position, 0);
+            animUp.GameObject().SetActive(true);
+            animDown.GameObject().SetActive(true);
+
+            animUp.Transform().DOMove(
+                origin.Transform().position + Vector3.up * Definition.BOARD_HEIGHT, 
+                Definition.BOARD_HEIGHT * 0.1f)
+                .SetEase(Ease.Linear);
+            animDown.Transform().DOMove(
+                origin.Transform().position + Vector3.down * Definition.BOARD_HEIGHT,
+                Definition.BOARD_HEIGHT * 0.1f)
+                .SetEase(Ease.Linear);
+            
             //force vertical
             int x = origin.Coordinates().x;
             int y = origin.Coordinates().y;
             
             origin.CrushTile();
+            origin.ChangePositionState(EPositionState.Free);
 
             for (int i = 0; i < Definition.BOARD_HEIGHT; i++)
             {
-                await UniTask.Delay(100);
                 int check = y - i;
                 List<NormalTilePosition> target = new();
                 if (GridController.IsInBounds(x, check))
@@ -41,8 +61,12 @@ namespace _Scripts.Controller
                     }
                 }
                 crushTileAction?.Invoke(target);
+                
+                await UniTask.Delay(100);
             }
-            await UniTask.Delay(100);
+            
+            animDown.Crush();
+            animUp.Crush();
             completedActionCallback?.Invoke();
         }
 
@@ -56,7 +80,7 @@ namespace _Scripts.Controller
                 case ETileType.PinWheel:
                 case ETileType.LightBall:
                 {
-                    SpecialTileHandler.Merge(target, origin, grid, crushTileAction, completedActionCallback);
+                    SpecialTileHandler.Merge(target, origin, grid, crushTileAction, completedActionCallback, isSwapped);
                     return;
                 }
                 case ETileType.Boom:
@@ -83,6 +107,35 @@ namespace _Scripts.Controller
                 {
                     origin.CrushTile();
                     await UniTask.Delay(100);
+                    
+                    ITile animUp = BoardController.TileFactory(ETileType.Rocket, center.Transform().position, 0);
+                    ITile animDown = BoardController.TileFactory(ETileType.Rocket, center.Transform().position, 0);
+                    ITile animLeft = BoardController.TileFactory(ETileType.Rocket, center.Transform().position, 0);
+                    ITile animRight = BoardController.TileFactory(ETileType.Rocket, center.Transform().position, 0);
+                    
+                    animUp.GameObject().SetActive(true);
+                    animDown.GameObject().SetActive(true);
+                    animLeft.GameObject().SetActive(true);
+                    animRight.GameObject().SetActive(true);
+
+                    animUp.Transform().DOMove(
+                            center.Transform().position + Vector3.up * Definition.BOARD_HEIGHT, 
+                            Definition.BOARD_HEIGHT * 0.1f)
+                        .SetEase(Ease.Linear);
+                    animDown.Transform().DOMove(
+                            center.Transform().position + Vector3.down *  Definition.BOARD_HEIGHT,
+                            Definition.BOARD_HEIGHT * 0.1f)
+                        .SetEase(Ease.Linear);
+                    
+                    animLeft.Transform().DOMove(
+                            center.Transform().position + Vector3.left * Definition.BOARD_WIDTH, 
+                            Definition.BOARD_WIDTH * 0.1f)
+                        .SetEase(Ease.Linear);
+                    animRight.Transform().DOMove(
+                            center.Transform().position + Vector3.right * Definition.BOARD_WIDTH,
+                            Definition.BOARD_WIDTH * 0.1f)
+                        .SetEase(Ease.Linear);
+
                     target.CrushTile();
                     int x = center.Coordinates().x;
                     int y = center.Coordinates().y;
@@ -137,6 +190,11 @@ namespace _Scripts.Controller
                         await UniTask.Delay(100);
                     }
 
+                    animDown.Crush();
+                    animUp.Crush();
+                    animLeft.Crush();
+                    animRight.Crush();
+                    
                     completedActionCallback?.Invoke();
                     break;
                 }

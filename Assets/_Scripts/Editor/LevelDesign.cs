@@ -42,7 +42,7 @@ namespace _Scripts.Editor
                     _dictTargetColor.Add(t, t switch
                     {
                         EGridPositionType.None => Color.black,
-                        EGridPositionType.Gem => Color.white,
+                        EGridPositionType.Tile => Color.white,
                         _ => throw new ArgumentOutOfRangeException()
                     });
                 }
@@ -273,8 +273,8 @@ namespace _Scripts.Editor
                     if (GridController.IsInBounds(x + 1, y) 
                         && GridController.IsInBounds(x + 2, y))
                     {
-                        if (_cacheGridPosition[x + 1, y].type == EGridPositionType.Gem 
-                            && _cacheGridPosition[x + 2, y].type == EGridPositionType.Gem)
+                        if (_cacheGridPosition[x + 1, y].type == EGridPositionType.Tile 
+                            && _cacheGridPosition[x + 2, y].type == EGridPositionType.Tile)
                         {
                             return true;
                         }
@@ -284,8 +284,8 @@ namespace _Scripts.Editor
                     if (GridController.IsInBounds(x, y + 1) 
                         && GridController.IsInBounds(x, y +2))
                     {
-                        if (_cacheGridPosition[x, y + 1].type == EGridPositionType.Gem 
-                            && _cacheGridPosition[x, y + 2].type == EGridPositionType.Gem)
+                        if (_cacheGridPosition[x, y + 1].type == EGridPositionType.Tile 
+                            && _cacheGridPosition[x, y + 2].type == EGridPositionType.Tile)
                         {
                             return true;
                         }
@@ -296,9 +296,9 @@ namespace _Scripts.Editor
                         && GridController.IsInBounds(x, y + 1)
                         && GridController.IsInBounds(x + 1, y + 1))
                     {
-                        if (_cacheGridPosition[x + 1, y].type == EGridPositionType.Gem
-                            && _cacheGridPosition[x, y + 1].type == EGridPositionType.Gem
-                            && _cacheGridPosition[x + 1, y + 1].type == EGridPositionType.Gem)
+                        if (_cacheGridPosition[x + 1, y].type == EGridPositionType.Tile
+                            && _cacheGridPosition[x, y + 1].type == EGridPositionType.Tile
+                            && _cacheGridPosition[x + 1, y + 1].type == EGridPositionType.Tile)
                         {
                             return true;
                         }

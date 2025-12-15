@@ -45,11 +45,11 @@ namespace _Scripts.Grid
                 case EGridPositionType.None:
                 {
                     _spriteRenderer.enabled = false;
-                    _mask.enabled = false;
+                    SetMask(false);
                     _tilePosition = new EmptyTilePosition();
                     break;
                 }
-                case EGridPositionType.Gem:
+                case EGridPositionType.Tile:
                 {
                     _tilePosition = new NormalTilePosition();
                     break;
@@ -62,6 +62,11 @@ namespace _Scripts.Grid
             
             _tilePosition.CreateTilePosition(_coordinates, gameObject, transform);
             return _tilePosition;
+        }
+
+        public void SetMask(bool enable)
+        {
+            _mask.enabled = enable;
         }
 
         #endregion

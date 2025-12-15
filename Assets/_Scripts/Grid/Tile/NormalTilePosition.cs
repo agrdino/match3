@@ -13,7 +13,7 @@ namespace _Scripts.Grid
 
         #region ----- Properties -----
 
-        public override EGridPositionType GridPositionType() => EGridPositionType.Gem;
+        public override EGridPositionType GridPositionType() => EGridPositionType.Tile;
 
         public ITile CurrentTile => _currentTile;
 

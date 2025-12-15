@@ -26,7 +26,7 @@ namespace _Scripts.Grid
         
         public void ChangePositionState(EPositionState newState)
         {
-            Debug.LogError(_coordinates + " " + newState);
+            Debug.Log(_coordinates + " " + newState);
             _positionState = newState;
         }
     }

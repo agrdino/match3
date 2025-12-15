@@ -84,8 +84,8 @@ namespace _Scripts.Grid
             position1.SetFutureGem(gem2, true);
 
             //gem1 at p2 || gem2 at p1
-            bool isMatchAtPosition1 = _IsMatchAt(position1.Coordinates(), out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match1);
-            bool isMatchAtPosition2 = _IsMatchAt(position2.Coordinates(), out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match2);
+            bool isMatchAtPosition1 = _IsMatchAt(position1.Coordinates(), out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match1, bySwipe: true);
+            bool isMatchAtPosition2 = _IsMatchAt(position2.Coordinates(), out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match2, bySwipe: true);
             
             if (isMatchAtPosition1 || isMatchAtPosition2)
             {
@@ -133,21 +133,16 @@ namespace _Scripts.Grid
 
         private void _HalfSpecialSwap(NormalTilePosition position1, NormalTilePosition position2)
         {
-            NormalTilePosition special, normal;
-            if (position1.CurrentTile is SpecialTile)
+            if (position1.CurrentTile.TileType() is ETileType.LightBall || position2.CurrentTile.TileType() is ETileType.LightBall)
             {
-                special = position1;
-                normal = position2;
-            }
-            else
-            {
-                special = position2;
-                normal = position1;
-            }
-
-            if (special.CurrentTile.TileType() == ETileType.LightBall)
-            {
-                _MergeSpecialTile(special, normal);
+                if (position1.CurrentTile.TileType() is ETileType.LightBall)
+                {
+                    _MergeSpecialTile(position1, position2);
+                }
+                else
+                {
+                    _MergeSpecialTile(position2, position1, true);
+                }
                 return;
             }
             
@@ -197,7 +192,8 @@ namespace _Scripts.Grid
         }
         
         private bool _IsMatchAt(Coordinates coordinates, out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match,
-            bool predict = false)
+            bool predict = false,
+            bool bySwipe = false)
         {
             int x = coordinates.x;
             int y = coordinates.y;
@@ -220,7 +216,7 @@ namespace _Scripts.Grid
                 return false;
             }
 
-            if (predict && center.CurrentTile is SpecialTile)
+            if ((bySwipe || predict) && center.CurrentTile is SpecialTile)
             {
                 match.matchedTile.Add(center);
                 return true;
@@ -442,7 +438,14 @@ namespace _Scripts.Grid
                     continue;
                 }
 
-                allTileDestroyTask.Add(CrushTile(tilePosition));
+                if (tilePosition.CurrentTile == null)
+                {
+                    continue;
+                }
+
+                allTileDestroyTask.Add(CrushTile(tilePosition.CurrentTile));
+                tilePosition.ReleaseTile();
+                tilePosition.ChangePositionState(EPositionState.Free);
             }
 
             await UniTask.WhenAll(allTileDestroyTask);
@@ -459,20 +462,10 @@ namespace _Scripts.Grid
                 _FillBoard();
             }
 
-            async UniTask CrushTile(NormalTilePosition tilePosition)
+            async UniTask CrushTile(ITile tile)
             {
-                // if(bySwipe || (!bySwipe && !bySpecial))
-                if (tilePosition.CurrentTile == null)
-                {
-                    tilePosition.ChangePositionState(EPositionState.Free);
-                    return;
-                }
-                if (bySwipe || !bySpecial)
-                {
-                    await TileAnimationController.CrushAnimation.Play(tilePosition.CurrentTile.GameObject());
-                }
-                tilePosition.CrushTile();
-                tilePosition.ChangePositionState(EPositionState.Free);
+                await TileAnimationController.CrushAnimation.Play(tile.GameObject());
+                tile.Crush();
             }
         }
 
