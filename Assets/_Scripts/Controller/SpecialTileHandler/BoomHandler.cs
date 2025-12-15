@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using _Scripts.Grid;
+using _Scripts.Tile;
 using _Scripts.Tile.Animation;
 using Cysharp.Threading.Tasks;
 
@@ -13,8 +14,13 @@ namespace _Scripts.Controller
             Action completedActionCallback)
         {
             List<NormalTilePosition> targets = _GetAffectedPosition(origin, 3, grid);
-            await TileAnimationController.ZoomAnimation.Play(origin.CurrentTile.GameObject());
-            origin.CrushTile();
+
+            ITile boomTile = origin.CurrentTile;
+            origin.ReleaseTile();
+
+            boomTile.SetSortingOrder(100);
+            await TileAnimationController.ZoomAnimation.Play(boomTile.GameObject());
+            boomTile.Crush();
             
             crushTileAction?.Invoke(targets);
             await UniTask.Delay(100);
@@ -39,11 +45,15 @@ namespace _Scripts.Controller
                     origin.CrushTile();
                     //get all target
                     
+                    ITile boomTile = target.CurrentTile;
+                    boomTile.SetSortingOrder(100);
+                    target.ReleaseTile();
+                    
                     List<NormalTilePosition> targets = _GetAffectedPosition(target, 5, grid);
-                    await TileAnimationController.ZoomAnimation.Play(target.CurrentTile.GameObject());
+                    await TileAnimationController.ZoomAnimation.Play(boomTile.GameObject());
 
+                    boomTile.Crush();
                     crushTileAction?.Invoke(targets);
-                    target.CrushTile();
                     await UniTask.Delay(100);
                     completedActionCallback?.Invoke();
 

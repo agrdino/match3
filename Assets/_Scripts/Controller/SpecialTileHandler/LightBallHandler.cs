@@ -4,7 +4,6 @@ using _Scripts.Grid;
 using _Scripts.Tile;
 using _Scripts.Tile.Animation;
 using Cysharp.Threading.Tasks;
-using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace _Scripts.Controller
@@ -26,16 +25,10 @@ namespace _Scripts.Controller
                     i * 0.1f);
             }
             
-            await TileAnimationController.ChargeAnimation.Play(origin.CurrentTile.GameObject(), targets.Count * 0.1f + 0.15f);
+            oldTile.SetSortingOrder(100);
+            await TileAnimationController.ChargeAnimation.Play(oldTile.GameObject(), targets.Count * 0.1f + 0.15f);
+            oldTile.Crush();
 
-            if (origin.CurrentTile == oldTile)
-            {
-                origin.CrushTile();
-            }
-            else
-            {
-                oldTile.Crush();
-            }
             crushTileAction?.Invoke(targets);
  
             await UniTask.Delay(100);
@@ -47,7 +40,10 @@ namespace _Scripts.Controller
             Action completedActionCallback, bool isSwapped = false)
         {
             ETileType targetTile = target.CurrentTile.TileType();
-            origin.CrushTile();
+            ITile oldTile = origin.CurrentTile;
+            target.CrushTile();
+            origin.ReleaseTile();
+
             List<NormalTilePosition> targets = new();
             switch (targetTile)
             {
@@ -56,15 +52,16 @@ namespace _Scripts.Controller
                 case ETileType.Boom:
                 {
                     targets = _GetTargets(grid);
-                    targets.Add(target);
-                    Debug.LogError(targets.Count);
-                    TileAnimationController.ChargeAnimation.Play(target.CurrentTile.GameObject(),
-                        targets.Count * 0.1f + 0.15f);
+                    oldTile.SetSortingOrder(100);
                     
+                    TileAnimationController.ChargeAnimation.Play(oldTile.GameObject(),
+                        targets.Count * 0.1f + 0.15f);
+
+                    ITile newTile ;
                     for (var i = 0; i < targets.Count; i++)
                     {
                         targets[i].CrushTile();
-                        ITile newTile =
+                        newTile =
                             BoardController.TileFactory(targetTile, targets[i].Transform().position, 0);
                         newTile.GameObject().SetActive(true);
                         targets[i].SetFutureGem(newTile);
@@ -73,14 +70,23 @@ namespace _Scripts.Controller
                         
                         await UniTask.Delay(100);
                     }
+                    
+                    await UniTask.Delay(100);
+                    
+                    //create one more
+                    oldTile.Crush();
+                    newTile =
+                        BoardController.TileFactory(targetTile, origin.Transform().position, 0);
+                    newTile.GameObject().SetActive(true);
+                    origin.SetFutureGem(newTile);
+                    targets.Add(origin);
 
-                    await UniTask.Delay(200);
+                    await UniTask.Delay(100);
+
                     break;
                 }
                 case ETileType.LightBall:
                 {
-                    target.ChangePositionState(EPositionState.Busy);
-                    ITile oldTile = target.CurrentTile;
                     targets = _GetTargets(grid, ETileType.All);
                     for (var i = 0; i < targets.Count; i++)
                     {
@@ -89,17 +95,36 @@ namespace _Scripts.Controller
                             i * 0.05f);
                     }
 
+                    oldTile.SetSortingOrder(100);
                     await TileAnimationController.ChargeAnimation.Play(target.CurrentTile.GameObject(), targets.Count * 0.05f + 0.1f);
 
-                    if (target.CurrentTile == oldTile)
-                    {
-                        target.CrushTile();
-                    }
-                    else
-                    {
-                        oldTile.Crush();
-                    }
+                    oldTile.Crush();
+
                     break;
+                }
+                case ETileType.Yellow:
+                case ETileType.Green:
+                case ETileType.Red:
+                case ETileType.Blue:
+                case ETileType.Orange:
+                {
+                    targets = _GetTargets(grid, targetTile);
+                    for (var i = 0; i < targets.Count; i++)
+                    {
+                        TileAnimationController.ChargeAnimation.Play(targets[i].CurrentTile.GameObject(),
+                            (targets.Count - i) * 0.1f + 0.15f,
+                            i * 0.1f);
+                    }
+            
+                    oldTile.SetSortingOrder(100);
+                    await TileAnimationController.ChargeAnimation.Play(oldTile.GameObject(), targets.Count * 0.1f + 0.15f);
+                    oldTile.Crush();
+                    crushTileAction?.Invoke(new List<NormalTilePosition>(targets));
+ 
+                    await UniTask.Delay(100);
+                    completedActionCallback?.Invoke();
+
+                    return;
                 }
                 default:
                 {

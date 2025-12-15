@@ -83,6 +83,10 @@ namespace _Scripts.Grid
         {
             int order = 0;
             ITilePosition currentPosition;
+            
+            //ngưng drop nếu tile trên đầu busy 
+            //sau khi hết busy => fill lại
+            bool needToRefill = false;
             for (int x = 0; x < Definition.BOARD_WIDTH; x++)
             {
                 order = 1;
@@ -103,7 +107,8 @@ namespace _Scripts.Grid
                     ITile nextTile = null;
                     if (reason is EPositionState.Busy)
                     {
-                        break;
+                        needToRefill = true;
+                        continue;
                     }
                     if (nearestTile == null)
                     {
@@ -125,7 +130,8 @@ namespace _Scripts.Grid
                         gemPosition.SetFutureGem(nextTile);
                         nearestTile.ReleaseTile();
                     }
-                    
+
+                    var refill = needToRefill;
                     gemPosition.CurrentTile.MoveTo(gemPosition.Transform().position, order, async () =>
                     {
                         gemPosition.CompleteReceivedTile();
@@ -133,11 +139,13 @@ namespace _Scripts.Grid
                         {
                             return;
                         }
-                        await UniTask.Delay(150);
+                        
                         if (_IsMatchAt(gemPosition.Coordinates(), out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match))
                         {
-                            await _MatchHandler(match, 250);
-                            
+                            _ = _MatchHandler(match, 250);
+                        }
+                        else if (refill)
+                        {
                             _FillBoard();
                         }
                     });
@@ -266,6 +274,7 @@ namespace _Scripts.Grid
             for (int i = 0; i < coordinates.Count; i++)
             {
                 NormalTilePosition current = _tilePositions[coordinates[i].x, coordinates[i].y];
+                current.ChangePositionState(EPositionState.Busy);
                 gems[i].MoveTo(current.Transform().position, 0, () =>
                 {
                     current.ChangePositionState(EPositionState.Free);

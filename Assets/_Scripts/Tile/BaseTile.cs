@@ -44,6 +44,12 @@ namespace _Scripts.Tile
         {
             _tileType = tileType;
             _spriteRenderer.sprite = Config.Instance[tileType];
+            SetSortingOrder(0);
+        }
+
+        public virtual void SetSortingOrder(int sortingOrder)
+        {
+            _spriteRenderer.sortingOrder = sortingOrder;
         }
 
         public virtual void MoveTo(Vector3 targetPosition, int order, Action onCompleteMoveCallback)

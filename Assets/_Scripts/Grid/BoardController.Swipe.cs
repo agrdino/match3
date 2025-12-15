@@ -68,7 +68,10 @@ namespace _Scripts.Grid
             if (position1.CurrentTile is SpecialTile special1 && position2.CurrentTile is SpecialTile special2)
             {
                 _MergeSpecialTile(position1, position2);
+                return;
             }
+            
+            _HalfSpecialSwap(position1, position2);
         }
 
         private void _NormalSwap(NormalTilePosition position1, NormalTilePosition position2)
@@ -102,8 +105,6 @@ namespace _Scripts.Grid
                         t1 = _MatchHandler(match2, bySwipe: true);
                     }
 
-                    await t1;
-
                     position2.CompleteReceivedTile();
                 });
             
@@ -128,6 +129,29 @@ namespace _Scripts.Grid
                     position1.ChangePositionState(EPositionState.Free);
                 });
             }
+        }
+
+        private void _HalfSpecialSwap(NormalTilePosition position1, NormalTilePosition position2)
+        {
+            NormalTilePosition special, normal;
+            if (position1.CurrentTile is SpecialTile)
+            {
+                special = position1;
+                normal = position2;
+            }
+            else
+            {
+                special = position2;
+                normal = position1;
+            }
+
+            if (special.CurrentTile.TileType() == ETileType.LightBall)
+            {
+                _MergeSpecialTile(special, normal);
+                return;
+            }
+            
+            _NormalSwap(position1, position2);
         }
 
         private NormalTilePosition _GetSwipePosition(Coordinates coordinates, ESwipeDirection direction)
@@ -438,7 +462,6 @@ namespace _Scripts.Grid
             async UniTask CrushTile(NormalTilePosition tilePosition)
             {
                 // if(bySwipe || (!bySwipe && !bySpecial))
-                tilePosition.ChangePositionState(EPositionState.Busy);
                 if (tilePosition.CurrentTile == null)
                 {
                     tilePosition.ChangePositionState(EPositionState.Free);

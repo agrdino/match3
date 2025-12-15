@@ -35,6 +35,7 @@ namespace _Scripts.Controller
 
                 target.CurrentTile.onCrushed += ChangeTarget;
 
+                pinWheel.SetSortingOrder(100);
                 pinWheel.Transform().DOMove(target.Transform().position, 0.75f).SetEase(Ease.InCubic)
                     .OnComplete(async () =>
                     {
@@ -64,7 +65,7 @@ namespace _Scripts.Controller
                     ITile targetTile = target.CurrentTile;
                     targetTile.GameObject().SetActive(false);
                     target.ReleaseTile();
-                    completedActionCallback?.Invoke();
+                    
                     Active(origin, grid, async targets =>
                     {
                         targets[0].CrushTile();
@@ -72,18 +73,19 @@ namespace _Scripts.Controller
                         targetTile.Transform().position = targets[0].Transform().position;
                         targetTile.GameObject().SetActive(true);
                         crushTileAction?.Invoke(targets);
-                    }, completedActionCallback);
+                    }, null);
                     break;
                 }
                 case ETileType.PinWheel:
                 {
-                    Active(target, grid, crushTileAction, completedActionCallback);
-                    Active(origin, grid, crushTileAction, completedActionCallback);
+                    Active(target, grid, crushTileAction, null);
+                    Active(origin, grid, crushTileAction, null);
                     ITile newSpinWheel =
                         BoardController.TileFactory(ETileType.PinWheel, origin.Transform().position, 0);
                     newSpinWheel.GameObject().SetActive(true);
                     target.SetFutureGem(newSpinWheel);
-                    Active(target, grid, crushTileAction, completedActionCallback);
+                    Active(target, grid, crushTileAction, null);
+                    completedActionCallback?.Invoke();
                     break;
                 }
                 default:

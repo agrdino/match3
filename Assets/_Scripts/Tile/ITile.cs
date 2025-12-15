@@ -13,6 +13,7 @@ namespace _Scripts.Tile
         public event Action<BaseTile> onCrushed;
 
         public void SetUp(ETileType tileType, int row);
+        public void SetSortingOrder(int sortingOrder);
         public void Crush();
         public void MoveTo(Vector3 targetPosition, int order, Action onCompleteMoveCallback);
         public UniTask Swap(Vector3 target, Action callback = null);
