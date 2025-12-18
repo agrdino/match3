@@ -247,11 +247,6 @@ namespace _Scripts.Grid
             // Nếu ngang >= 3 -> thêm vào result
             if (horizontal.Count >= 3)
             {
-                Debug.Log("-----------------------");
-                horizontal.ForEach(z =>
-                {
-                    Debug.Log(z.Coordinates() + " " + z.CurrentTile.TileType());
-                });
                 match.matchedTile.AddRange(horizontal);
             }
             
@@ -274,11 +269,6 @@ namespace _Scripts.Grid
 
             if (vertical.Count >= 3)
             {
-                Debug.Log("-----------------------");
-                vertical.ForEach(z =>
-                {
-                    Debug.Log(z.Coordinates() + " " + z.CurrentTile.TileType());
-                });
                 match.matchedTile.AddRange(vertical);
             }
 

@@ -118,7 +118,6 @@ namespace _Scripts.Grid
         
         private async void _FillBoard(bool firstTime = false, bool isSub = false)
         {
-            Debug.LogError("fill");
             int order = 0;
             ITilePosition currentPosition;
             
@@ -145,7 +144,6 @@ namespace _Scripts.Grid
                     ITile nextTile = null;
                     if (reason is EPositionState.Busy)
                     {
-                        Debug.LogError(currentPosition.Coordinates());
                         needToRefill = true;
                         continue;
                     }

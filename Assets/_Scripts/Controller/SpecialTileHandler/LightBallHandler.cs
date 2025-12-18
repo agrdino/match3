@@ -4,7 +4,6 @@ using _Scripts.Grid;
 using _Scripts.Tile;
 using _Scripts.Tile.Animation;
 using Cysharp.Threading.Tasks;
-using Unity.Android.Gradle.Manifest;
 using UnityEngine;
 using Action = System.Action;
 using Random = UnityEngine.Random;
