@@ -209,7 +209,6 @@ namespace _Scripts.Grid
                     if (!_tilePositions[column, y].CurrentTile.IsMoving()
                         && _tilePositions[column, y].CurrentTile.TileState() == ETileState.Moving)
                     {
-                        Debug.LogError($"make {_tilePositions[column, y].CurrentTile.GameObject().name} stop");
                         _tilePositions[column, y].CompleteReceivedTile();
                         CheckMatchAt(_tilePositions[column, y]);
                     }
@@ -240,11 +239,11 @@ namespace _Scripts.Grid
                         continue;
                     }
                     
-                    if (upperTile.CurrentTile.IsMoving())
-                    {
-                        continue;
-                    }
-                    else
+                    // if (upperTile.CurrentTile.IsMoving())
+                    // {
+                    //     continue;
+                    // }
+                    // else
                     {
                         currentTile = upperTile.CurrentTile;
                         upperTile.ReleaseTile();
@@ -252,7 +251,6 @@ namespace _Scripts.Grid
                 }
                 
                 _tilePositions[column, y].SetFutureTile(currentTile);
-                Debug.LogError($"make {currentTile.GameObject().name} move");
                 currentTile.MoveTo(_tilePositions[column, y].Transform().position, 0, () =>
                 {
                     _FillColumn(column);
