@@ -9,14 +9,18 @@ namespace _Scripts.Tile
         public Transform Transform();
         public GameObject GameObject();
         public ETileType TileType();
+        public ETileState TileState();
+        public bool IsMoving();
 
         public event Action<BaseTile> onCrushed;
 
         public void SetUp(ETileType tileType, int row);
         public void SetSortingOrder(int sortingOrder);
+        public void ChangeState(ETileState newState);
         public void SetMask(SpriteMaskInteraction spriteMaskInteraction);
         public void Crush();
         public void MoveTo(Vector3 targetPosition, int order, Action onCompleteMoveCallback);
+        public void StopMove();
         public UniTask Swap(Vector3 target, Action callback = null);
         public UniTask SwapAndSwapBack(Vector3 target, Action callback = null);
 

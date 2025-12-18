@@ -36,7 +36,6 @@ namespace _Scripts.Controller
             int y = origin.Coordinates().y;
             
             origin.CrushTile();
-            origin.ChangePositionState(EPositionState.Free);
 
             for (int i = 0; i < Definition.BOARD_HEIGHT; i++)
             {
@@ -46,7 +45,7 @@ namespace _Scripts.Controller
                 {
                     if (grid[x, check] != null && !grid[x, check].IsAvailable()) 
                     {
-                        grid[x, check].ChangePositionState(EPositionState.Busy);
+                        grid[x, check].ChangePositionState(ETileState.Matching);
                         target.Add(grid[x, check]);
                     }
                 }
@@ -56,7 +55,7 @@ namespace _Scripts.Controller
                 {
                     if (grid[x, check] != null && !grid[x, check].IsAvailable())
                     {
-                        grid[x, check].ChangePositionState(EPositionState.Busy);
+                        grid[x, check].ChangePositionState(ETileState.Matching);
                         target.Add(grid[x, check]);
                     }
                 }
@@ -94,7 +93,7 @@ namespace _Scripts.Controller
                             ITile newRocket = BoardController.TileFactory(ETileType.Rocket,
                                 affectedPosition.GameObject().transform.position, 0);
                             newRocket.GameObject().SetActive(true);
-                            affectedPosition.SetFutureGem(newRocket);
+                            affectedPosition.SetFutureTile(newRocket);
                             targets.Add(affectedPosition);
                         }
                     }
@@ -149,7 +148,7 @@ namespace _Scripts.Controller
                         {
                             if (!down.IsAvailable())
                             {
-                                down.ChangePositionState(EPositionState.Busy);
+                                down.ChangePositionState(ETileState.Matching);
                                 targets.Add(down);
                             }
                         }
@@ -159,7 +158,7 @@ namespace _Scripts.Controller
                         {
                             if (!up.IsAvailable())
                             {
-                                up.ChangePositionState(EPositionState.Busy);
+                                up.ChangePositionState(ETileState.Matching);
                                 targets.Add(up);
                             }
                         }
@@ -169,7 +168,7 @@ namespace _Scripts.Controller
                         {
                             if (!right.IsAvailable())
                             {
-                                right.ChangePositionState(EPositionState.Busy);
+                                right.ChangePositionState(ETileState.Matching);
                                 targets.Add(right);
                             }
                         }
@@ -179,7 +178,7 @@ namespace _Scripts.Controller
                         {
                             if (!left.IsAvailable())
                             {
-                                left.ChangePositionState(EPositionState.Busy);
+                                left.ChangePositionState(ETileState.Matching);
                                 targets.Add(left);
                             }
                         }

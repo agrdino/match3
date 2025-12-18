@@ -31,7 +31,7 @@ namespace _Scripts.Controller
 
                     target = grid[UnityEngine.Random.Range(0, Definition.BOARD_WIDTH),
                         UnityEngine.Random.Range(0, Definition.BOARD_HEIGHT)];
-                } while (target == null || target.IsAvailable() || target.PositionState() == EPositionState.Busy);
+                } while (target == null || target.IsAvailable() || target.TileState() == ETileState.Free);
 
                 target.CurrentTile.onCrushed += ChangeTarget;
 
@@ -70,7 +70,7 @@ namespace _Scripts.Controller
                     Active(origin, grid, async targets =>
                     {
                         targets[0].CrushTile();
-                        targets[0].SetFutureGem(targetTile);
+                        targets[0].SetFutureTile(targetTile);
                         targetTile.Transform().position = targets[0].Transform().position;
                         targetTile.GameObject().SetActive(true);
                         crushTileAction?.Invoke(targets);
@@ -86,7 +86,7 @@ namespace _Scripts.Controller
                     ITile newSpinWheel =
                         BoardController.TileFactory(ETileType.PinWheel, origin.Transform().position, 0);
                     newSpinWheel.GameObject().SetActive(true);
-                    target.SetFutureGem(newSpinWheel);
+                    target.SetFutureTile(newSpinWheel);
                     crushTileAction?.Invoke(new List<NormalTilePosition>(){target});
                     // Active(target, grid, crushTileAction, null);
                     completedActionCallback?.Invoke();

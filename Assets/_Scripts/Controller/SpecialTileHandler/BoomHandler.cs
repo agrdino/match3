@@ -23,7 +23,6 @@ namespace _Scripts.Controller
             boomTile.SetMask(SpriteMaskInteraction.None);
             await TileAnimationController.ZoomAnimation.Play(boomTile.GameObject());
             boomTile.Crush();
-            origin.ChangePositionState(EPositionState.Free);
             
             crushTileAction?.Invoke(targets);
             await UniTask.Delay(100);
@@ -98,12 +97,7 @@ namespace _Scripts.Controller
                         continue;
                     }
                     
-                    if (grid[x + i, y + j].PositionState() is EPositionState.Busy)
-                    {
-                        continue;
-                    }
-
-                    grid[x + i, y + j].ChangePositionState(EPositionState.Busy);
+                    grid[x + i, y + j].ChangePositionState(ETileState.Matching);
                     
                     targets.Add(grid[x + i, y + j]);
                 }

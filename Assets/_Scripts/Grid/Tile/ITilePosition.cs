@@ -10,9 +10,8 @@ namespace _Scripts.Grid
         
         public EGridPositionType GridPositionType();
         public bool IsAvailable();
-        public EPositionState PositionState();
+        public ETileState TileState();
         public void CreateTilePosition(Coordinates coordinates, GameObject gameObject, Transform transform);
-        public void ChangePositionState(EPositionState newState);
         public void CrushTile();
     }
 }

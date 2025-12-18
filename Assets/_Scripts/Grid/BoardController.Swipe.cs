@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using _Scripts.Controller;
 using _Scripts.Tile;
 using _Scripts.Tile.Animation;
 using Cysharp.Threading.Tasks;
@@ -19,7 +18,7 @@ namespace _Scripts.Grid
                 return;
             }
             _currentPosition = _tilePositions[coordinates.x, coordinates.y];
-            if (_currentPosition.IsAvailable() || _currentPosition.PositionState() is not EPositionState.Free)
+            if (_currentPosition.IsAvailable() || _currentPosition.TileState() is not ETileState.Free)
             {
                 _currentPosition = null;
             }
@@ -40,7 +39,7 @@ namespace _Scripts.Grid
             
             NormalTilePosition position2 = _GetSwipePosition(_currentPosition.Coordinates(), direction);
 
-            if (position2 == null ||  position2.IsAvailable() || position2.PositionState() is not EPositionState.Free)
+            if (position2 == null ||  position2.IsAvailable() || position2.TileState() is not ETileState.Free)
             {
                 _currentPosition = null;
                 return;
@@ -80,8 +79,8 @@ namespace _Scripts.Grid
             ITile gem2 = position2.CurrentTile;
             
             //Check
-            position2.SetFutureGem(gem1, true);
-            position1.SetFutureGem(gem2, true);
+            position2.SetFutureTile(gem1, true);
+            position1.SetFutureTile(gem2, true);
 
             //gem1 at p2 || gem2 at p1
             bool isMatchAtPosition1 = _IsMatchAt(position1.Coordinates(), out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match1, bySwipe: true);
@@ -89,8 +88,8 @@ namespace _Scripts.Grid
             
             if (isMatchAtPosition1 || isMatchAtPosition2)
             {
-                position1.ChangePositionState(EPositionState.Busy);
-                position2.ChangePositionState(EPositionState.Busy);
+                position1.ChangePositionState(ETileState.Swapping);
+                position2.ChangePositionState(ETileState.Swapping);
                 
                 _ = gem1.Swap(position2.Transform().position, async () =>
                 {
@@ -104,29 +103,30 @@ namespace _Scripts.Grid
                     {
                         t1 = _MatchHandler(match2, bySwipe: true);
                     }
-
+                    gem1.MoveTo(position2.Transform().position, 0 , null);
                     position2.CompleteReceivedTile();
                 });
             
                 _ = gem2.Swap(position1.Transform().position, () =>
                 {
+                    gem2.MoveTo(position1.Transform().position, 0 , null);
                     position1.CompleteReceivedTile();
                 });
             }
             else
             {
                 //return
-                position2.SetFutureGem(gem2);
-                position1.SetFutureGem(gem1);
+                position2.SetFutureTile(gem2);
+                position1.SetFutureTile(gem1);
                 
                 _ = gem1.SwapAndSwapBack(position2.Transform().position, () =>
                 {
-                    position2.ChangePositionState(EPositionState.Free);
+                    position2.ChangePositionState(ETileState.Free);
                 });
                 
                 _ = gem2.SwapAndSwapBack(position1.Transform().position, () =>
                 {
-                    position1.ChangePositionState(EPositionState.Free);
+                    position1.ChangePositionState(ETileState.Free);
                 });
             }
         }
@@ -346,7 +346,7 @@ namespace _Scripts.Grid
         {
             foreach (var gemPosition in match.matchedTile)
             {
-                gemPosition.ChangePositionState(EPositionState.Busy);
+                gemPosition.ChangePositionState(ETileState.Matching);
             }
             
             ETileType specialTileType = ETileType.None;
@@ -435,7 +435,6 @@ namespace _Scripts.Grid
 
                 allTileDestroyTask.Add(CrushTile(tilePosition.CurrentTile));
                 tilePosition.ReleaseTile();
-                tilePosition.ChangePositionState(EPositionState.Free);
             }
 
             await UniTask.WhenAll(allTileDestroyTask);
@@ -444,7 +443,7 @@ namespace _Scripts.Grid
             {
                 ITile specialTile = TileFactory(specialTileType, match.origin.Transform().position, 0);
                 specialTile.GameObject().SetActive(true);
-                match.origin.SetFutureGem(specialTile, true);
+                match.origin.SetFutureTile(specialTile, true);
             }
 
             if (autoFill)
@@ -475,7 +474,7 @@ namespace _Scripts.Grid
 
             if (!predict)
             {
-                if (target.PositionState() is EPositionState.Busy)
+                if (target.TileState() is not ETileState.Free)
                 {
                     return false;
                 }

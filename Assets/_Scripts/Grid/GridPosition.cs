@@ -114,7 +114,7 @@ namespace _Scripts.Grid
             _tilePosition.CrushTile();
             ITile newTile = BoardController.TileFactory(_toType, transform.position, 0);
             newTile.GameObject().SetActive(true);
-            (_tilePosition as NormalTilePosition)?.SetFutureGem(newTile, true);
+            (_tilePosition as NormalTilePosition)?.SetFutureTile(newTile, true);
         } 
 
 #endif

@@ -20,15 +20,14 @@ namespace _Scripts.Tile
         #endregion
 
         #region ----- Variable -----
-
-        protected float _delayMove; 
         
+        protected ETileState _tileState;
         protected ETileType _tileType;
         protected Vector3 _targetPosition;
         protected float _velocity;
         protected Action _onCompleteMove;
         protected bool _isMoving;
-        
+
         #endregion
 
         #region ----- Properties -----
@@ -36,6 +35,8 @@ namespace _Scripts.Tile
         public Transform Transform() => transform;
         public GameObject GameObject() => gameObject;
         public virtual ETileType TileType() => _tileType;
+        public virtual ETileState TileState() => _tileState;
+        public bool IsMoving() => _isMoving;
 
         public event Action<BaseTile> onCrushed;
 
@@ -54,6 +55,11 @@ namespace _Scripts.Tile
             _spriteRenderer.sortingOrder = sortingOrder;
         }
 
+        public virtual void ChangeState(ETileState newState)
+        {
+            _tileState = newState;
+        }
+        
         public virtual void SetMask(SpriteMaskInteraction spriteMaskInteraction)
         {
             _spriteRenderer.maskInteraction = spriteMaskInteraction;
@@ -61,14 +67,23 @@ namespace _Scripts.Tile
 
         public virtual void MoveTo(Vector3 targetPosition, int order, Action onCompleteMoveCallback)
         {
-            _delayMove = order * 0.05f;
             _targetPosition = targetPosition;
             _onCompleteMove = onCompleteMoveCallback;
-            if (!_isMoving)
+            _isMoving = true;
+
+            if (_tileState != ETileState.Moving)
             {
-                _isMoving = true;
-                DOVirtual.Float(0, 1, 0.25f, value => _velocity = value).SetDelay(_delayMove).SetEase(Ease.InCubic);
+                DOVirtual.Float(0, 1, 0.25f, value => _velocity = value).SetEase(Ease.InCubic);
             }
+            _tileState = ETileState.Moving;
+        }
+
+        public virtual void StopMove()
+        {
+            _isMoving = false;
+            _velocity = 0;
+            transform.position = _targetPosition;
+            _tileState = ETileState.Free;
         }
 
         public virtual async UniTask Swap(Vector3 target, Action callback = null)
@@ -95,22 +110,18 @@ namespace _Scripts.Tile
 
         private void LateUpdate()
         {
-            if (!_isMoving)
+            if (_tileState != ETileState.Moving)
             {
                 return;
             }
 
-            if (transform.position.y < _targetPosition.y && Vector3.Distance(transform.position, _targetPosition) < 0.1f)
+            if (transform.position.y < _targetPosition.y)
             {
                 _isMoving = false;
                 _onCompleteMove?.Invoke();
-                _onCompleteMove = null;
-                _velocity = 0;
-                transform.position = _targetPosition;
-                return; 
             }
             
-            transform.position += (Time.deltaTime * 1.25f / Definition.MOVE_TIME_PER_UNIT) * _velocity * (_targetPosition - transform.position).normalized;
+            transform.position += Time.deltaTime / Definition.MOVE_TIME_PER_UNIT * _velocity * Vector3.down;
         }
     }
 }

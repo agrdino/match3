@@ -14,6 +14,7 @@ namespace _Scripts.Grid
         #region ----- Properties -----
 
         public override EGridPositionType GridPositionType() => EGridPositionType.Tile;
+        public override ETileState TileState() => _currentTile.TileState();
 
         public ITile CurrentTile => _currentTile;
 
@@ -22,6 +23,11 @@ namespace _Scripts.Grid
         #endregion
 
         #region ----- Public Function -----
+        
+        public override void ChangePositionState(ETileState newState)
+        {
+            _currentTile.ChangeState(newState);
+        }
 
         public void CrushTile()
         {
@@ -39,15 +45,15 @@ namespace _Scripts.Grid
             _currentTile = null;
         }
         
-        public void SetFutureGem(ITile tile, bool force = false)
+        public void SetFutureTile(ITile tile, bool force = false)
         {
-            ChangePositionState(force ? EPositionState.Free : EPositionState.Busy);
             _currentTile = tile;
+            ChangePositionState(ETileState.Free);
         }
 
         public void CompleteReceivedTile()
         {
-            ChangePositionState(EPositionState.Free);
+            _currentTile.StopMove();
         }
         
 

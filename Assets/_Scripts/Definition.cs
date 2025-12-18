@@ -26,18 +26,21 @@
         LightBall,
     }
 
+    public enum ETileState
+    {
+        None,
+        Free,
+        Moving,
+        Swapping,
+        Matching,
+    }
+
     public enum EGridPositionType
     {
         None,
         Tile,
     }
     
-    public enum EPositionState
-    {
-        Free,
-        Busy,
-    }
-
     public enum ESwipeDirection
     {
         Cancel,

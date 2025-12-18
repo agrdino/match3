@@ -90,7 +90,7 @@ namespace _Scripts.Grid
                 checkingPosition.Clear();
             }
             
-            _FillBoard(true);
+            _FillBoardFirstTime(true);
             _boardState = EBoardState.Free;
         }
 
@@ -115,15 +115,14 @@ namespace _Scripts.Grid
         {
             _levelConfig = Config.Instance.levelConfigs[0];
         }
-        
-        private async void _FillBoard(bool firstTime = false, bool isSub = false)
+
+        private async void _FillBoardFirstTime(bool firstTime = false, bool isSub = false)
         {
             int order = 0;
             ITilePosition currentPosition;
-            
-            //ngưng drop nếu tile trên đầu busy 
-            //sau khi hết busy => fill lại
-            bool needToRefill = false;
+
+            // ngưng drop nếu tile trên đầu busy
+            // sau khi hết busy => fill lại
             for (int x = 0; x < Definition.BOARD_WIDTH; x++)
             {
                 order = 1;
@@ -140,13 +139,9 @@ namespace _Scripts.Grid
                         continue;
                     }
 
-                    (EPositionState reason, NormalTilePosition nearestTile) = _FindNearestGem(x, y);
+                    (ETileState reason, NormalTilePosition nearestTile) = _FindNearestGem(x, y);
                     ITile nextTile = null;
-                    if (reason is EPositionState.Busy)
-                    {
-                        needToRefill = true;
-                        continue;
-                    }
+                    
                     if (nearestTile == null)
                     {
                         ETileType newTileType;
@@ -154,9 +149,9 @@ namespace _Scripts.Grid
                         {
                             nextTile?.Release();
                             newTileType = (ETileType)Random.Range((int)ETileType.Yellow, (int)ETileType.Orange + 1);
-                            nextTile = _CreateNewTile(x, y, newTileType, order);
+                            nextTile = _CreateNewTile(x, newTileType, order);
                             nextTile.GameObject().SetActive(true);
-                            tilePosition.SetFutureGem(nextTile);
+                            tilePosition.SetFutureTile(nextTile);
                         } while (firstTime && _IsMatchAt(tilePosition.Coordinates(), predict: true));
 
                         order++;
@@ -164,35 +159,14 @@ namespace _Scripts.Grid
                     else
                     {
                         nextTile = nearestTile.CurrentTile;
-                        tilePosition.SetFutureGem(nextTile);
+                        tilePosition.SetFutureTile(nextTile);
                         nearestTile.ReleaseTile();
                     }
 
-                    var refill = needToRefill;
                     tilePosition.CurrentTile.MoveTo(tilePosition.Transform().position, order, async () =>
                     {
                         tilePosition.CompleteReceivedTile();
-                        if (firstTime)
-                        {
-                            return;
-                        }
-                        
-                        if (_IsMatchAt(tilePosition.Coordinates(), out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match))
-                        {
-                            _ = _MatchHandler(match, 250);
-                        }
-                        else if (refill)
-                        {
-                            _FillBoard();
-                        }
                     });
-                    // nextGem.Transform()
-                    //     .DOMove(gemPosition.Transform().position, nextGem.Transform().position.MoveTimeCalculate(gemPosition.Transform().position))
-                    //     .SetEase(Ease.Linear)
-                    //     .OnComplete(() =>
-                    //     {
-                    //         gemPosition.CompleteReceivedGem();
-                    //     });
                 }
             }
 
@@ -200,12 +174,109 @@ namespace _Scripts.Grid
             {
                 return;
             }
-            
+
             //check available match
             if (_boardState is EBoardState.Free && !_HasAnyPossibleMove())
             {
                 _boardState = EBoardState.PreShuffle;
                 _shuffleTimer = Time.time + Definition.DELAY_TO_SHUFFLE;
+            }
+        }
+
+        private async void _FillBoard()
+        {
+            for (int x = 0; x < Definition.BOARD_WIDTH; x++)
+            {
+                _FillColumn(x);
+            }
+        }
+
+        private async void _FillColumn(int column)
+        {
+            //trên cùng fall xuống từng nấc
+            for (int y = 0; y < Definition.BOARD_HEIGHT; y++)
+            {
+                ITile currentTile = null;
+                NormalTilePosition upperTile = null;
+                
+                if (_tilePositions[column, y] == null)
+                {
+                    continue;
+                }
+                
+                if (!_tilePositions[column, y].IsAvailable())
+                {
+                    if (!_tilePositions[column, y].CurrentTile.IsMoving()
+                        && _tilePositions[column, y].CurrentTile.TileState() == ETileState.Moving)
+                    {
+                        Debug.LogError($"make {_tilePositions[column, y].CurrentTile.GameObject().name} stop");
+                        _tilePositions[column, y].CompleteReceivedTile();
+                        CheckMatchAt(_tilePositions[column, y]);
+                    }
+                    continue;
+                }
+                
+                for (int upperPosition = y + 1; upperPosition < Definition.BOARD_HEIGHT; upperPosition++)
+                {
+                    if (_tilePositions[column, upperPosition] == null)
+                    {
+                        continue;
+                    }
+
+                    upperTile = _tilePositions[column, upperPosition];
+                    break;
+                }
+
+                if (upperTile == null)
+                {
+                    ETileType newTileType = (ETileType)Random.Range((int)ETileType.Yellow, (int)ETileType.Orange + 1);
+                    currentTile = _CreateNewTile(column, newTileType, 1);
+                    currentTile.GameObject().SetActive(true);
+                }
+                else
+                {
+                    if (upperTile.IsAvailable())
+                    {
+                        continue;
+                    }
+                    
+                    if (upperTile.CurrentTile.IsMoving())
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        currentTile = upperTile.CurrentTile;
+                        upperTile.ReleaseTile();
+                    }
+                }
+                
+                _tilePositions[column, y].SetFutureTile(currentTile);
+                Debug.LogError($"make {currentTile.GameObject().name} move");
+                currentTile.MoveTo(_tilePositions[column, y].Transform().position, 0, () =>
+                {
+                    _FillColumn(column);
+                });
+            }
+
+            async void CheckMatchAt(NormalTilePosition position)
+            {
+                await UniTask.Delay(250);
+                
+                if (position.IsAvailable())
+                {
+                    return;
+                }
+
+                if (position.TileState() is not ETileState.Free)
+                {
+                    return;
+                }
+                
+                if (_IsMatchAt(position.Coordinates(), out (NormalTilePosition origin, List<NormalTilePosition> matchedTile) match))
+                {
+                    _ = _MatchHandler(match, 0);
+                }
             }
         }
 
@@ -233,8 +304,8 @@ namespace _Scripts.Grid
                         horizontalTile = horizontal.CurrentTile;
 
                         //swap
-                        horizontal.SetFutureGem(originTile);
-                        origin.SetFutureGem(horizontalTile);
+                        horizontal.SetFutureTile(originTile);
+                        origin.SetFutureTile(horizontalTile);
 
                         if (_IsMatchAt(origin.Coordinates(), true) || _IsMatchAt(horizontal.Coordinates(), true))
                         {
@@ -242,8 +313,8 @@ namespace _Scripts.Grid
                             hasAvailableMove = true;
                         }
                         
-                        horizontal.SetFutureGem(horizontalTile, true);
-                        origin.SetFutureGem(originTile, true);
+                        horizontal.SetFutureTile(horizontalTile, true);
+                        origin.SetFutureTile(originTile, true);
                     }
                     
                     //vertical
@@ -254,8 +325,8 @@ namespace _Scripts.Grid
                         verticalTile = vertical.CurrentTile;
 
                         //swap
-                        vertical.SetFutureGem(originTile);
-                        origin.SetFutureGem(verticalTile);
+                        vertical.SetFutureTile(originTile);
+                        origin.SetFutureTile(verticalTile);
 
                         if (_IsMatchAt(origin.Coordinates(), true) || _IsMatchAt(vertical.Coordinates(), true))
                         {
@@ -263,8 +334,8 @@ namespace _Scripts.Grid
                             hasAvailableMove = true;
                         }
                         
-                        vertical.SetFutureGem(verticalTile, true);
-                        origin.SetFutureGem(originTile, true);
+                        vertical.SetFutureTile(verticalTile, true);
+                        origin.SetFutureTile(originTile, true);
                     }
 
                     if (hasAvailableMove)
@@ -304,17 +375,17 @@ namespace _Scripts.Grid
                 for (var i = 0; i < coordinates.Count; i++)
                 {
                     NormalTilePosition current = _tilePositions[coordinates[i].x, coordinates[i].y];
-                    current.SetFutureGem(gems[i]);
+                    current.SetFutureTile(gems[i]);
                 }
             } while (!_HasAnyPossibleMove());
 
             for (int i = 0; i < coordinates.Count; i++)
             {
                 NormalTilePosition current = _tilePositions[coordinates[i].x, coordinates[i].y];
-                current.ChangePositionState(EPositionState.Busy);
+                current.ChangePositionState(ETileState.Moving);
                 gems[i].MoveTo(current.Transform().position, 0, () =>
                 {
-                    current.ChangePositionState(EPositionState.Free);
+                    current.ChangePositionState(ETileState.Free);
                 });
             }
 
@@ -351,7 +422,7 @@ namespace _Scripts.Grid
             _FillBoard();
         }
         
-        private (EPositionState reason, NormalTilePosition nearest) _FindNearestGem(int x, int y)
+        private (ETileState reason, NormalTilePosition nearest) _FindNearestGem(int x, int y)
         {
             for (int i = y + 1; i < Definition.BOARD_HEIGHT; i++)
             {
@@ -365,18 +436,18 @@ namespace _Scripts.Grid
                     continue;
                 }
                 
-                if (_tilePositions[x, i].PositionState() is EPositionState.Busy)
+                if (_tilePositions[x, i].TileState() is not ETileState.Free)
                 {
-                    return (EPositionState.Busy, null);
+                    return (_tilePositions[x, i].TileState(), null);
                 }
                 
-                return (EPositionState.Free, _tilePositions[x, i]);
+                return (ETileState.Free, _tilePositions[x, i]);
             }
 
-            return (EPositionState.Free,null);
+            return (ETileState.Free,null);
         }
 
-        private ITile _CreateNewTile(int x, int y, ETileType tileType, int order)
+        private ITile _CreateNewTile(int x, ETileType tileType, int order)
         {
             Vector3 spawnPosition = _gridController.DictSpawnPosition[x].Transform().position + order * Vector3.up;
             ITile newTile = TileFactory(tileType, spawnPosition, order);
@@ -435,7 +506,7 @@ namespace _Scripts.Grid
                 
                 tilePosition.CrushTile();
             }
-            _FillBoard(true);
+            _FillBoardFirstTime();
             await UniTask.Delay(3000);
             _ReCreateBoard();
         }

@@ -7,7 +7,6 @@ namespace _Scripts.Grid
         protected Transform _transform;
         protected GameObject _gameObject;
         protected EGridPositionType _gridPositionType;
-        protected EPositionState _positionState;
         protected Coordinates _coordinates;
         
         public Transform Transform() => _transform;
@@ -15,7 +14,7 @@ namespace _Scripts.Grid
         public Coordinates Coordinates() => _coordinates;
 
         public virtual EGridPositionType GridPositionType() => _gridPositionType;
-        public virtual EPositionState PositionState() => _positionState;
+        public virtual ETileState TileState() => ETileState.None;
 
         public void CreateTilePosition(Coordinates coordinates, GameObject gameObject, Transform transform)
         {
@@ -23,10 +22,7 @@ namespace _Scripts.Grid
             _gameObject = gameObject;
             _coordinates = coordinates;
         }
-        
-        public void ChangePositionState(EPositionState newState)
-        {
-            _positionState = newState;
-        }
+
+        public abstract void ChangePositionState(ETileState newState);
     }
 }

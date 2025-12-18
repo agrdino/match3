@@ -31,7 +31,6 @@ namespace _Scripts.Controller
             oldTile.SetMask(SpriteMaskInteraction.None);
             await TileAnimationController.ChargeAnimation.Play(oldTile.GameObject(), targets.Count * 0.1f + 0.15f);
             oldTile.Crush();
-            origin.ChangePositionState(EPositionState.Free);
 
             crushTileAction?.Invoke(targets);
  
@@ -80,7 +79,7 @@ namespace _Scripts.Controller
                         newTile =
                             BoardController.TileFactory(targetTile, targets[i].Transform().position, 0);
                         newTile.GameObject().SetActive(true);
-                        targets[i].SetFutureGem(newTile);
+                        targets[i].SetFutureTile(newTile);
                         TileAnimationController.ChargeAnimation.Play(newTile.GameObject(),
                             (targets.Count - i) * 0.1f + 0.15f);
                         
@@ -95,7 +94,7 @@ namespace _Scripts.Controller
                     newTile =
                         BoardController.TileFactory(targetTile, center.Transform().position, 0);
                     newTile.GameObject().SetActive(true);
-                    center.SetFutureGem(newTile);
+                    center.SetFutureTile(newTile);
                     targets.Add(center);
 
                     await UniTask.Delay(100);
@@ -147,7 +146,7 @@ namespace _Scripts.Controller
                         BoardController.TileFactory(targetTile, center.Transform().position, 0);
                     newTile.GameObject().SetActive(true);
                     
-                    center.SetFutureGem(newTile);
+                    center.SetFutureTile(newTile);
                     targets.Add(center);
                     crushTileAction?.Invoke(new List<NormalTilePosition>(targets));
                     
@@ -184,18 +183,15 @@ namespace _Scripts.Controller
                 {
                     continue;
                 }
-
-                if (tilePosition.PositionState() is EPositionState.Busy)
-                {
-                    continue;
-                }
-
+                
+                
                 if (targetTile != ETileType.All && tilePosition.CurrentTile.TileType() != targetTile)
                 {
                     continue;
                 }
 
-                tilePosition.ChangePositionState(EPositionState.Busy);
+                tilePosition.CurrentTile.StopMove();
+                tilePosition.ChangePositionState(ETileState.Matching);
                 targets.Add(tilePosition);
             }
             

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace _Scripts.Helper.Pooling
@@ -8,6 +9,7 @@ namespace _Scripts.Helper.Pooling
         [SerializeField] private T _prefab;
         
         private List<T> _pool = new List<T>();
+        private int count;
 
         public T Get()
         {
@@ -22,7 +24,9 @@ namespace _Scripts.Helper.Pooling
                 return _pool[i];
             }
 
+            count += 1;
             T newObject = Instantiate(_prefab, transform);
+            newObject.GameObject().name = count.ToString();
             _pool.Add(newObject);
             return newObject;
         }
